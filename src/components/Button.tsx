@@ -1,33 +1,44 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { COLORS } from '../theme';
+import { useApp } from '../AppProvider';
+import { Icon, type IconName } from './Icon';
 
 interface Props {
   title: string;
   onPress: () => void;
+  icon?: IconName;
   variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
 }
 
-export function Button({ title, onPress, variant = 'primary' }: Props) {
-  const primary = variant === 'primary';
+export function Button({ title, onPress, icon, variant = 'primary', disabled }: Props) {
+  const { colors } = useApp();
+  const background = variant === 'primary' ? colors.accent : colors.surface;
+  const foreground = variant === 'primary' ? '#FFFFFF' : variant === 'danger' ? colors.danger : colors.text;
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.button,
-        primary ? styles.primary : styles.secondary,
-        pressed && { opacity: 0.7 },
+        { backgroundColor: background, opacity: disabled ? 0.4 : pressed ? 0.75 : 1 },
       ]}
     >
-      <Text style={[styles.text, primary && { color: COLORS.surface }, variant === 'danger' && { color: COLORS.danger }]}>
-        {title}
-      </Text>
+      {icon && <Icon name={icon} size={20} color={foreground} />}
+      <Text style={[styles.text, { color: foreground }]}>{title}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: { borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  primary: { backgroundColor: COLORS.accent },
-  secondary: { backgroundColor: COLORS.surface },
-  text: { fontSize: 16, fontWeight: '600', color: COLORS.text },
+  button: {
+    flexDirection: 'row',
+    gap: 8,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: { fontSize: 16, fontWeight: '600' },
 });

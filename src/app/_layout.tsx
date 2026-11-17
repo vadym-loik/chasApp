@@ -1,24 +1,46 @@
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { COLORS } from '../theme';
+import { AppProvider, useApp } from '../AppProvider';
 
 export default function RootLayout() {
   return (
-    <>
-      <StatusBar style="dark" />
+    <AppProvider>
+      <AppStack />
+    </AppProvider>
+  );
+}
+
+function AppStack() {
+  const { colors, scheme, t } = useApp();
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: colors.accent,
+      background: colors.background,
+      card: colors.background,
+      text: colors.text,
+    },
+  };
+
+  return (
+    <NavigationThemeProvider value={navigationTheme}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: COLORS.background },
-          headerTintColor: COLORS.text,
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: COLORS.background },
+          headerTintColor: colors.accent,
+          headerTitleStyle: { color: colors.text },
+          headerBackButtonDisplayMode: 'minimal',
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'My counters' }} />
-        <Stack.Screen name="create" options={{ title: 'New counter', presentation: 'modal' }} />
+        <Stack.Screen name="index" options={{ title: 'Chas', headerLargeTitleEnabled: true }} />
+        <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="[id]" options={{ title: '' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        <Stack.Screen name="settings" options={{ title: t.settings }} />
       </Stack>
-    </>
+    </NavigationThemeProvider>
   );
 }

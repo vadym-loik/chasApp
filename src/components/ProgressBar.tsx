@@ -1,15 +1,22 @@
 import { StyleSheet, View } from 'react-native';
-import { COLORS } from '../theme';
+import { useApp } from '../AppProvider';
 
-export function ProgressBar({ progress }: { progress: number }) {
+export function ProgressBar({ progress, height = 8 }: { progress: number; height?: number }) {
+  const { colors } = useApp();
   return (
-    <View style={styles.track}>
-      <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
+    <View style={[styles.track, { height, borderRadius: height / 2, backgroundColor: colors.track }]}>
+      <View
+        style={{
+          width: `${Math.round(progress * 100)}%`,
+          height: '100%',
+          borderRadius: height / 2,
+          backgroundColor: colors.accent,
+        }}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  track: { height: 8, borderRadius: 4, backgroundColor: COLORS.track, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 4, backgroundColor: COLORS.accent },
+  track: { overflow: 'hidden' },
 });

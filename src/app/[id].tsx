@@ -1,31 +1,44 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { Field } from '../components/Field';
+import { HeaderButton } from '../components/HeaderButton';
 import { ProgressBar } from '../components/ProgressBar';
-import { COUNTER_TYPE_LABELS, type CounterItem } from '../models/counter';
+import type { CounterItem } from '../models/counter';
 import { deleteCounter, getCounter, updateCounter } from '../services/storage';
-import { COLORS } from '../theme';
+import { useApp } from '../AppProvider';
 import { confirm } from '../utils/confirm';
-import { getCounterStats, parseNumber, today } from '../utils/counter';
+import { getCounterDetails, getCounterStats, parseNumber, today } from '../utils/counter';
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors, cardColor, t } = useApp();
+  const insets = useSafeAreaInsets();
   const [item, setItem] = useState<CounterItem | null | undefined>(undefined);
   const [newValue, setNewValue] = useState('');
 
-  const load = useCallback(() => getCounter(id).then((c) => setItem(c ?? null)), [id]);
-  useEffect(() => {
-    load();
-  }, [load]);
+  const load = useCallback(async () => {
+    const c = await getCounter(id);
+    setItem(c ?? null);
+    setNewValue(c?.currentValue === undefined ? '' : String(c.currentValue));
+  }, [id]);
+
+  // Reload when the user comes back from the edit screen.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   if (item === undefined) return null;
   if (item === null) {
-    return <Text style={styles.missing}>Counter not found.</Text>;
+    return <Text style={[styles.missing, { color: colors.muted }]}>{t.notFound}</Text>;
   }
 
-  const stats = getCounterStats(item);
+  const stats = getCounterStats(item, t);
+  const parsedValue = parseNumber(newValue);
 
   async function update(changes: Partial<CounterItem>) {
     await updateCounter(id, changes);
@@ -33,69 +46,91 @@ export default function DetailScreen() {
   }
 
   function reset() {
-    confirm('Reset counter?', 'The count starts again from today.', () => update({ startDate: today() }));
-  }
-
-  function saveValue() {
-    const n = parseNumber(newValue);
-    if (n === undefined) return;
-    update({ currentValue: n });
-    setNewValue('');
+    confirm(
+      { title: t.startOverTitle, message: t.startOverMessage, action: t.startOver, cancel: t.cancel },
+      () => update({ startDate: today() }),
+    );
   }
 
   function remove() {
-    confirm('Delete counter?', `"${item!.title}" will be deleted.`, async () => {
-      await deleteCounter(id);
-      router.back();
-    });
+    confirm(
+      { title: t.deleteTitle, message: t.deleteMessage(item!.title), action: t.delete, cancel: t.cancel },
+      async () => {
+        await deleteCounter(id);
+        router.back();
+      },
+    );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={[styles.hero, { backgroundColor: item.color }]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.value}>{stats.value}</Text>
-        <Text style={styles.unit}>{stats.unit} · {COUNTER_TYPE_LABELS[item.type]}</Text>
-        {stats.progress !== undefined && (
-          <View style={styles.progress}>
-            <ProgressBar progress={stats.progress} />
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <HeaderButton icon="edit" label={t.editCounter} onPress={() => router.push(`/edit?id=${id}`)} />
+          ),
+        }}
+      />
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+      >
+        <View style={[styles.hero, { backgroundColor: cardColor(item.color) }]}>
+          <Text style={styles.emoji}>{item.emoji}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[styles.type, { color: colors.muted }]}>{t.types[item.type].label}</Text>
+          <Text style={[styles.value, { color: colors.text }]} adjustsFontSizeToFit numberOfLines={1}>
+            {stats.value}
+          </Text>
+          <Text style={[styles.label, { color: colors.text }]}>{stats.label}</Text>
+          {stats.progress !== undefined && (
+            <View style={styles.progress}>
+              <ProgressBar progress={stats.progress} height={10} />
+            </View>
+          )}
+          <Text style={[styles.details, { color: colors.muted }]}>{getCounterDetails(item, t)}</Text>
+        </View>
+
+        {item.type === 'goal_progress' && (
+          <View style={styles.updateRow}>
+            <View style={styles.flex}>
+              <Field
+                label={t.currentValue}
+                value={newValue}
+                onChangeText={setNewValue}
+                keyboardType="decimal-pad"
+                selectTextOnFocus
+              />
+            </View>
+            <View>
+              <Button
+                title={t.update}
+                disabled={parsedValue === undefined || parsedValue === item.currentValue}
+                onPress={() => update({ currentValue: parsedValue })}
+              />
+            </View>
           </View>
         )}
-        <Text style={styles.meta}>
-          {item.type === 'days_left' && `Target date: ${item.targetDate}`}
-          {item.type === 'days_passed' && `Since: ${item.startDate}`}
-          {item.type === 'goal_progress' &&
-            `${item.initialValue} → ${item.currentValue} → ${item.targetValue}`}
-        </Text>
-      </View>
-
-      {item.type === 'days_passed' && <Button title="Reset to today" onPress={reset} />}
-      {item.type === 'goal_progress' && (
-        <>
-          <Field
-            label="Current value"
-            value={newValue}
-            onChangeText={setNewValue}
-            keyboardType="decimal-pad"
-            placeholder={String(item.currentValue ?? '')}
-          />
-          <Button title="Update value" onPress={saveValue} />
-        </>
-      )}
-      <Button title="Delete" variant="danger" onPress={remove} />
-    </ScrollView>
+        {item.type === 'days_passed' && (
+          <Button title={t.startOver} icon="reset" variant="secondary" onPress={reset} />
+        )}
+        <Button title={t.delete} icon="trash" variant="danger" onPress={remove} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 16 },
-  hero: { borderRadius: 24, padding: 24, alignItems: 'center', gap: 4 },
-  emoji: { fontSize: 56 },
-  title: { fontSize: 22, fontWeight: '700', color: COLORS.text },
-  value: { fontSize: 72, fontWeight: '800', color: COLORS.text, marginTop: 8 },
-  unit: { fontSize: 15, color: COLORS.muted },
-  progress: { alignSelf: 'stretch', marginTop: 16 },
-  meta: { fontSize: 14, color: COLORS.muted, marginTop: 12 },
-  missing: { padding: 24, fontSize: 16, color: COLORS.muted, textAlign: 'center' },
+  flex: { flex: 1 },
+  content: { padding: 16, gap: 14 },
+  hero: { borderRadius: 28, padding: 28, alignItems: 'center' },
+  emoji: { fontSize: 64 },
+  title: { fontSize: 24, fontWeight: '700', marginTop: 8, textAlign: 'center' },
+  type: { fontSize: 14, marginTop: 4 },
+  value: { fontSize: 88, fontWeight: '800', marginTop: 12, fontVariant: ['tabular-nums'] },
+  label: { fontSize: 17, fontWeight: '500' },
+  progress: { alignSelf: 'stretch', marginTop: 20 },
+  details: { fontSize: 14, marginTop: 14, textAlign: 'center' },
+  updateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
+  missing: { padding: 24, fontSize: 16, textAlign: 'center' },
 });
