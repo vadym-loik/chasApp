@@ -24,6 +24,8 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
   </tr>
 </table>
 
+<img src="docs/screenshots/widgets.png" width="400" alt="Android widgets: a counter and the year" />
+
 ## Features
 
 - **Year countdown** — how much of the year has passed, days and weekends left.
@@ -33,6 +35,7 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 - Counters in groups: upcoming (nearest first), since, goals and past.
 - Details: weeks and days left, weekends left, days passed of the total.
 - Create and edit counters with a live preview, quick dates, emoji and card colors.
+- Android home screen widgets: the year, and one counter of your choice. Add them from Settings or from the home screen.
 - Native date picker on Android and iOS.
 - Light, dark and system themes, and six accent colors.
 - English, Ukrainian and French. The app follows the phone language, or you can choose one in Settings.
@@ -52,6 +55,8 @@ npm run android    # open in an Android emulator or a connected device
 npm run ios        # open in the iOS simulator (macOS only)
 ```
 
+Widgets do not work in Expo Go. To test them, build the APK (see below).
+
 ## Checks
 
 ```bash
@@ -59,6 +64,17 @@ npm run typecheck
 npm run lint
 npm test
 ```
+
+## Build the APK
+
+Needs JDK 17 and the Android SDK.
+
+```bash
+npx expo prebuild --platform android
+cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+```
+
+Then sign `android/app/build/outputs/apk/release/app-release.apk` with your release key (`apksigner`).
 
 ## Logo
 
@@ -81,12 +97,15 @@ src/
 ├── services/       # Storage (AsyncStorage)
 ├── theme/          # Colors
 ├── utils/          # Day, year and percent calculations
+├── widgets/        # Android widgets and their configuration screen
 └── AppProvider.tsx # Settings, theme and language for all screens
+index.ts            # Entry: Expo Router and widget registration
 ```
 
 ## About the screenshots
 
-The screenshots come from the web build with demo data, at phone size (390×844, 2×).
+The app screenshots come from the web build with demo data, at phone size (390×844, 2×).
+The widget screenshot comes from an Android 16 emulator.
 The web build uses the browser date input. Android and iOS use the native date picker.
 
 ## Roadmap
@@ -94,7 +113,6 @@ The web build uses the browser date input. Android and iOS use the native date p
 - Reminders before an event.
 - Calendar view of all events.
 - Tags and pinned counters.
-- Home screen widgets. They need a development build.
 - GitHub Actions: build an `.apk` on each release.
 
 ## License

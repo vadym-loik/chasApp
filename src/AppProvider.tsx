@@ -4,13 +4,13 @@ import { useColorScheme } from 'react-native';
 import { resolveLanguage, STRINGS, type Language, type Strings } from './i18n/strings';
 import type { Settings } from './models/settings';
 import { getSettings, saveSettings } from './services/storage';
-import { ACCENTS, BASE_COLORS, cardColor, type BaseColors, type Scheme } from './theme/colors';
+import { cardColor, getThemeColors, type Scheme, type ThemeColors } from './theme/colors';
 
 interface AppContextValue {
   settings: Settings;
   setSettings: (changes: Partial<Settings>) => void;
   scheme: Scheme;
-  colors: BaseColors & { accent: string };
+  colors: ThemeColors;
   cardColor: (key: string) => string;
   language: Language;
   t: Strings;
@@ -41,7 +41,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSettings(next);
       },
       scheme,
-      colors: { ...BASE_COLORS[scheme], accent: ACCENTS[settings.accent] },
+      colors: getThemeColors(scheme, settings.accent),
       cardColor: (key) => cardColor(key, scheme),
       language,
       t: STRINGS[language],

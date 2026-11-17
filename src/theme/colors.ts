@@ -17,7 +17,7 @@ export const BASE_COLORS = {
     surface: '#FFFFFF',
     text: '#1C1B1F',
     muted: '#6E6A75',
-    track: 'rgba(0,0,0,0.08)',
+    track: '#00000014', // black, 8% opacity
     danger: '#D93F3F',
   },
   dark: {
@@ -25,11 +25,16 @@ export const BASE_COLORS = {
     surface: '#211F26',
     text: '#F4F2F7',
     muted: '#A09AAB',
-    track: 'rgba(255,255,255,0.12)',
+    track: '#FFFFFF1F', // white, 12% opacity
     danger: '#FF6B6B',
   },
 };
 export type BaseColors = (typeof BASE_COLORS)['light'];
+export type ThemeColors = BaseColors & { accent: string };
+
+export function getThemeColors(scheme: Scheme, accent: AccentKey): ThemeColors {
+  return { ...BASE_COLORS[scheme], accent: ACCENTS[accent] };
+}
 
 // Card colors have a soft tint in light mode and a deep tint in dark mode.
 export const CARD_COLORS = {

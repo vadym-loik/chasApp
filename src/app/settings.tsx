@@ -9,6 +9,7 @@ import { Segmented } from '../components/Segmented';
 import { LANGUAGES } from '../i18n/strings';
 import type { ThemeMode } from '../models/settings';
 import { ACCENT_KEYS, ACCENTS } from '../theme/colors';
+import { pinWidget, WIDGET_NAMES, widgetsAvailable } from '../widgets';
 
 const DONATE_URL = 'https://www.buymeacoffee.com/';
 const MODES: ThemeMode[] = ['system', 'light', 'dark'];
@@ -58,6 +59,14 @@ export default function SettingsScreen() {
           onSelect={(accent) => setSettings({ accent })}
         />
       </Labeled>
+
+      {widgetsAvailable && (
+        <Labeled label={t.widgets}>
+          <Text style={[styles.cardText, { color: colors.muted }]}>{t.widgetsHint}</Text>
+          <Button title={t.addYearWidget} icon="plus" variant="secondary" onPress={() => pinWidget(WIDGET_NAMES.year)} />
+          <Button title={t.addCounterWidget} icon="plus" variant="secondary" onPress={() => pinWidget(WIDGET_NAMES.counter)} />
+        </Labeled>
+      )}
 
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t.supportTitle}</Text>
