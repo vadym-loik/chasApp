@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
 import 'dayjs/locale/uk.js';
-import type { CounterType } from '../models/counter';
+import type { CounterType, Repeat } from '../models/counter';
 import type { AccentKey, CardColorKey } from '../theme/colors';
 
 export type Language = 'en' | 'uk' | 'fr';
@@ -37,6 +37,18 @@ const en = {
   pickerLocale: 'en-US',
   formatDate: dateFormatter('en', 'MMMM D, YYYY'),
   cancel: 'Cancel',
+  formatLongDay: dateFormatter('en', 'dddd, MMMM D'),
+  formatPercent: (n: number, digits: number) => `${n.toFixed(digits)}%`,
+  days: (n: number) => `${n} ${enPlural(n, 'day', 'days')}`,
+  weeks: (n: number) => `${n} ${enPlural(n, 'week', 'weeks')}`,
+  weekendsLeft: (n: number) => `${n} ${enPlural(n, 'weekend left', 'weekends left')}`,
+  daysOfTotal: (passed: number, total: number) => `${passed} of ${total} days`,
+  yearTitle: (year: number) => `Year ${year}`,
+  dayOfYear: (day: number, total: number) => `Day ${day} of ${total}`,
+  sections: { upcoming: 'Upcoming', since: 'Since', goals: 'Goals', past: 'Past' },
+  repeat: 'Repeat',
+  repeats: { none: 'Never', monthly: 'Every month', yearly: 'Every year' } as Record<Repeat, string>,
+  quickDates: { tomorrow: 'Tomorrow', week: 'In a week', month: 'In a month', year: 'In a year' },
 
   types: {
     days_left: { label: 'Countdown', description: 'Days left until a date', placeholder: 'Vacation' },
@@ -104,6 +116,18 @@ const uk: Strings = {
   pickerLocale: 'uk-UA',
   formatDate: dateFormatter('uk', 'D MMMM YYYY'),
   cancel: 'Скасувати',
+  formatLongDay: dateFormatter('uk', 'dddd, D MMMM'),
+  formatPercent: (n, digits) => `${n.toFixed(digits).replace('.', ',')}%`,
+  days: (n) => `${n} ${ukPlural(n, ['день', 'дні', 'днів'])}`,
+  weeks: (n) => `${n} ${ukPlural(n, ['тиждень', 'тижні', 'тижнів'])}`,
+  weekendsLeft: (n) => `${n} ${ukPlural(n, ['вікенд попереду', 'вікенди попереду', 'вікендів попереду'])}`,
+  daysOfTotal: (passed, total) => `${passed} з ${total} ${ukPlural(total, ['дня', 'днів', 'днів'])}`,
+  yearTitle: (year) => `Рік ${year}`,
+  dayOfYear: (day, total) => `День ${day} з ${total}`,
+  sections: { upcoming: 'Попереду', since: 'Від події', goals: 'Цілі', past: 'Минулі' },
+  repeat: 'Повтор',
+  repeats: { none: 'Ніколи', monthly: 'Щомісяця', yearly: 'Щороку' },
+  quickDates: { tomorrow: 'Завтра', week: 'Через тиждень', month: 'Через місяць', year: 'Через рік' },
 
   types: {
     days_left: { label: 'До події', description: 'Скільки днів залишилося до дати', placeholder: 'Відпустка' },
@@ -170,6 +194,18 @@ const fr: Strings = {
   pickerLocale: 'fr-FR',
   formatDate: dateFormatter('fr', 'D MMMM YYYY'),
   cancel: 'Annuler',
+  formatLongDay: dateFormatter('fr', 'dddd D MMMM'),
+  formatPercent: (n, digits) => `${n.toFixed(digits).replace('.', ',')}\u00A0%`,
+  days: (n) => `${n} ${frPlural(n, 'jour', 'jours')}`,
+  weeks: (n) => `${n} ${frPlural(n, 'semaine', 'semaines')}`,
+  weekendsLeft: (n) => `${n} ${frPlural(n, 'week-end restant', 'week-ends restants')}`,
+  daysOfTotal: (passed, total) => `${passed} sur ${total} jours`,
+  yearTitle: (year) => `Année ${year}`,
+  dayOfYear: (day, total) => `Jour ${day} sur ${total}`,
+  sections: { upcoming: 'À venir', since: 'Depuis', goals: 'Objectifs', past: 'Passés' },
+  repeat: 'Répétition',
+  repeats: { none: 'Jamais', monthly: 'Chaque mois', yearly: 'Chaque année' },
+  quickDates: { tomorrow: 'Demain', week: 'Dans une semaine', month: 'Dans un mois', year: 'Dans un an' },
 
   types: {
     days_left: { label: 'Compte à rebours', description: 'Jours restants avant une date', placeholder: 'Vacances' },

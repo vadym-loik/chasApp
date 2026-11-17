@@ -29,7 +29,7 @@ export function CounterCard({ item, onPress }: Props) {
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {item.title}
           </Text>
-          <Text style={[styles.details, { color: colors.muted }]} numberOfLines={1}>
+          <Text style={[styles.details, { color: colors.muted }]} numberOfLines={2}>
             {getCounterDetails(item, t)}
           </Text>
         </View>

@@ -7,10 +7,13 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 
 ## Features
 
-- **Countdown** — days left until a date, with a progress bar.
+- **Year countdown** — how much of the year has passed, days and weekends left.
+- **Countdown** — days left until a date, with a progress bar. It can repeat every month or every year (birthdays, bills).
 - **Days since** — count days since a date, for habits. You can start again from today.
 - **Goal** — progress from a start value to a target value, for example weight 88 → 80.
-- Create and edit counters with a live preview, emoji and card colors.
+- Counters in groups: upcoming (nearest first), since, goals and past.
+- Details: weeks and days left, weekends left, days passed of the total.
+- Create and edit counters with a live preview, quick dates, emoji and card colors.
 - Native date picker on Android and iOS.
 - Light, dark and system themes, and six accent colors.
 - English, Ukrainian and French. The app follows the phone language, or you can choose one in Settings.

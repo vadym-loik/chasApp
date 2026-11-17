@@ -1,14 +1,15 @@
-import { router, Stack, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
 import { CounterCard } from '../components/CounterCard';
-import { HeaderButton } from '../components/HeaderButton';
 import { Icon } from '../components/Icon';
+import { YearCard } from '../components/YearCard';
 import type { CounterItem } from '../models/counter';
 import { getCounters } from '../services/storage';
-import { useApp } from '../AppProvider';
+import { groupCounters, today } from '../utils/counter';
 
 const openCreate = () => router.push('/edit');
 
@@ -16,28 +17,53 @@ export default function HomeScreen() {
   const { colors, t } = useApp();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<CounterItem[] | null>(null);
+  const [now, setNow] = useState(today());
 
+  // Reload on focus, so new counters and a new day show up.
   useFocusEffect(
     useCallback(() => {
+      setNow(today());
       getCounters().then(setItems);
     }, []),
   );
 
   return (
     <View style={styles.screen}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <HeaderButton icon="settings" label={t.settings} onPress={() => router.push('/settings')} />
-          ),
-        }}
-      />
-      <FlatList
-        data={items ?? []}
+      <SectionList
+        sections={items ? groupCounters(items, now) : []}
         keyExtractor={(item) => item.id}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 96 }]}
-        renderItem={({ item }) => <CounterCard item={item} onPress={() => router.push(`/${item.id}`)} />}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={[styles.list, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 96 }]}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <View style={styles.flex}>
+                <Text style={[styles.date, { color: colors.muted }]}>{t.formatLongDay(now)}</Text>
+                <Text style={[styles.appTitle, { color: colors.text }]}>Chas</Text>
+              </View>
+              <Pressable
+                onPress={() => router.push('/settings')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t.settings}
+                style={[styles.iconButton, { backgroundColor: colors.surface }]}
+              >
+                <Icon name="settings" size={20} color={colors.accent} />
+              </Pressable>
+            </View>
+            <YearCard now={now} />
+          </View>
+        }
+        renderSectionHeader={({ section }) => (
+          <Text style={[styles.sectionTitle, { color: colors.muted }]}>
+            {t.sections[section.key]} · {section.data.length}
+          </Text>
+        )}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <CounterCard item={item} onPress={() => router.push(`/${item.id}`)} />
+          </View>
+        )}
         ListEmptyComponent={items ? <EmptyState /> : undefined}
       />
       {items && items.length > 0 && (
@@ -63,9 +89,7 @@ function EmptyState() {
     <View style={styles.empty}>
       <Image source={require('../../assets/icon.png')} style={styles.logo} />
       <Text style={[styles.emptyTitle, { color: colors.text }]}>{t.emptyTitle}</Text>
-      <Text style={[styles.emptyText, { color: colors.muted }]}>
-        {t.emptyText}
-      </Text>
+      <Text style={[styles.emptyText, { color: colors.muted }]}>{t.emptyText}</Text>
       <View style={styles.emptyButton}>
         <Button title={t.createCounter} icon="plus" onPress={openCreate} />
       </View>
@@ -75,7 +99,22 @@ function EmptyState() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  list: { padding: 16, gap: 12 },
+  flex: { flex: 1 },
+  list: { paddingHorizontal: 16 },
+  header: { gap: 20, marginBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  date: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
+  appTitle: { fontSize: 34, fontWeight: '800', marginTop: 2 },
+  iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  item: { marginBottom: 12 },
   fab: {
     position: 'absolute',
     right: 20,
@@ -90,8 +129,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
-  empty: { alignItems: 'center', marginTop: 48, paddingHorizontal: 24, gap: 12 },
-  logo: { width: 96, height: 96, borderRadius: 24, marginBottom: 8 },
+  empty: { alignItems: 'center', marginTop: 32, paddingHorizontal: 16, gap: 12 },
+  logo: { width: 72, height: 72, borderRadius: 18, marginBottom: 4 },
   emptyTitle: { fontSize: 22, fontWeight: '700' },
   emptyText: { fontSize: 15, lineHeight: 22, textAlign: 'center' },
   emptyButton: { alignSelf: 'stretch', marginTop: 12 },

@@ -1,4 +1,6 @@
 export type CounterType = 'days_left' | 'days_passed' | 'goal_progress';
+export type Repeat = 'none' | 'monthly' | 'yearly';
+export const REPEATS: Repeat[] = ['none', 'monthly', 'yearly'];
 
 export interface CounterItem {
   id: string;
@@ -6,6 +8,7 @@ export interface CounterItem {
   emoji: string;
   type: CounterType;
   targetDate?: string; // YYYY-MM-DD, for days_left
+  repeat?: Repeat; // for days_left, e.g. birthdays repeat every year
   startDate?: string; // YYYY-MM-DD, for days_passed (and progress of days_left)
   initialValue?: number; // e.g. weight 88
   currentValue?: number; // e.g. weight 85

@@ -36,7 +36,7 @@ function AppStack() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'Chas', headerLargeTitleEnabled: true }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="[id]" options={{ title: '' }} />
         <Stack.Screen name="settings" options={{ title: t.settings }} />

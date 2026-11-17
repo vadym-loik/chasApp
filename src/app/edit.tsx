@@ -1,20 +1,23 @@
-import dayjs from 'dayjs';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
+import { Chips } from '../components/Chips';
 import { ColorSwatches } from '../components/ColorSwatches';
 import { CounterCard } from '../components/CounterCard';
 import { DateField } from '../components/DateField';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Field, Labeled } from '../components/Field';
 import { OptionRow } from '../components/OptionRow';
-import { COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, type CounterItem, type CounterType } from '../models/counter';
+import { Segmented } from '../components/Segmented';
+import {
+  COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, REPEATS, type CounterItem, type CounterType, type Repeat,
+} from '../models/counter';
 import { addCounter, getCounter, updateCounter } from '../services/storage';
 import { CARD_COLOR_KEYS, cardColor, type CardColorKey } from '../theme/colors';
-import { DATE_FORMAT, parseNumber, today } from '../utils/counter';
+import { addDays, parseNumber, today } from '../utils/counter';
 
 /** Creates a counter, or edits one when the route has an `id` param. */
 export default function EditScreen() {
@@ -36,6 +39,13 @@ export default function EditScreen() {
 
 const optionalText = (n?: number) => (n === undefined ? '' : String(n));
 
+const QUICK_DATES = [
+  { key: 'tomorrow', amount: 1, unit: 'day' },
+  { key: 'week', amount: 1, unit: 'week' },
+  { key: 'month', amount: 1, unit: 'month' },
+  { key: 'year', amount: 1, unit: 'year' },
+] as const;
+
 function CounterForm({ initial }: { initial: CounterItem | null }) {
   const { colors, scheme, t } = useApp();
   const insets = useSafeAreaInsets();
@@ -43,9 +53,8 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [emoji, setEmoji] = useState(initial?.emoji ?? COUNTER_TYPE_EMOJI.days_left);
   const [color, setColor] = useState(initial?.color ?? CARD_COLOR_KEYS[0]);
-  const [targetDate, setTargetDate] = useState(
-    initial?.targetDate ?? dayjs().add(1, 'month').format(DATE_FORMAT),
-  );
+  const [targetDate, setTargetDate] = useState(initial?.targetDate ?? addDays(today(), 1, 'month'));
+  const [repeat, setRepeat] = useState<Repeat>(initial?.repeat ?? 'none');
   const [startDate, setStartDate] = useState(initial?.startDate ?? today());
   const [initialValue, setInitialValue] = useState(optionalText(initial?.initialValue));
   const [currentValue, setCurrentValue] = useState(optionalText(initial?.currentValue));
@@ -63,7 +72,7 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
     if (!base.title) return t.errorName;
     if (type === 'days_left') {
       // Progress starts on the day the counter was created.
-      return { ...base, targetDate, startDate: initial?.startDate ?? today() };
+      return { ...base, targetDate, repeat, startDate: initial?.startDate ?? today() };
     }
     if (type === 'days_passed') return { ...base, startDate };
     const start = parseNumber(initialValue);
@@ -84,6 +93,7 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
     color,
     startDate,
     targetDate,
+    repeat,
     initialValue: parseNumber(initialValue),
     currentValue: parseNumber(initial ? currentValue : initialValue),
     targetValue: parseNumber(targetValue),
@@ -138,7 +148,26 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
           <EmojiPicker selected={emoji} onSelect={setEmoji} />
         </Labeled>
 
-        {type === 'days_left' && <DateField label={t.eventDate} value={targetDate} onChange={setTargetDate} />}
+        {type === 'days_left' && (
+          <>
+            <View style={styles.dateBlock}>
+              <DateField label={t.eventDate} value={targetDate} onChange={setTargetDate} />
+              <Chips
+                options={QUICK_DATES.map((q) => {
+                  const date = addDays(today(), q.amount, q.unit);
+                  return { key: q.key, label: t.quickDates[q.key], active: date === targetDate, onPress: () => setTargetDate(date) };
+                })}
+              />
+            </View>
+            <Labeled label={t.repeat}>
+              <Segmented
+                options={REPEATS.map((key) => ({ key, label: t.repeats[key] }))}
+                selected={repeat}
+                onSelect={setRepeat}
+              />
+            </Labeled>
+          </>
+        )}
         {type === 'days_passed' && <DateField label={t.startDate} value={startDate} onChange={setStartDate} />}
         {type === 'goal_progress' && (
           <View style={styles.row}>
@@ -175,5 +204,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: 16, gap: 22 },
   row: { flexDirection: 'row', gap: 10 },
+  dateBlock: { gap: 10 },
   error: { fontSize: 14, textAlign: 'center' },
 });

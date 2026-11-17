@@ -10,7 +10,7 @@ import type { CounterItem } from '../models/counter';
 import { deleteCounter, getCounter, updateCounter } from '../services/storage';
 import { useApp } from '../AppProvider';
 import { confirm } from '../utils/confirm';
-import { getCounterDetails, getCounterStats, parseNumber, today } from '../utils/counter';
+import { getCounterBreakdown, getCounterDetails, getCounterStats, parseNumber, today } from '../utils/counter';
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -89,6 +89,11 @@ export default function DetailScreen() {
             </View>
           )}
           <Text style={[styles.details, { color: colors.muted }]}>{getCounterDetails(item, t)}</Text>
+          {getCounterBreakdown(item, t).map((line) => (
+            <Text key={line} style={[styles.breakdown, { color: colors.text }]}>
+              {line}
+            </Text>
+          ))}
         </View>
 
         {item.type === 'goal_progress' && (
@@ -131,6 +136,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 17, fontWeight: '500' },
   progress: { alignSelf: 'stretch', marginTop: 20 },
   details: { fontSize: 14, marginTop: 14, textAlign: 'center' },
+  breakdown: { fontSize: 14, fontWeight: '500', marginTop: 6, textAlign: 'center' },
   updateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   missing: { padding: 24, fontSize: 16, textAlign: 'center' },
 });
