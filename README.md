@@ -5,6 +5,25 @@
 **Chas** (from the Ukrainian word «час», "time") is a free, ad-free app that counts days to events, days since events, and progress to goals.
 It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/home.png" width="200" alt="Home screen with the year countdown" /></td>
+    <td><img src="docs/screenshots/details.png" width="200" alt="Counter details" /></td>
+    <td><img src="docs/screenshots/new-counter.png" width="200" alt="New counter form" /></td>
+    <td><img src="docs/screenshots/home-dark-uk.png" width="200" alt="Home screen in dark theme, in Ukrainian" /></td>
+    <td><img src="docs/screenshots/settings-dark-fr.png" width="200" alt="Settings in French" /></td>
+  </tr>
+  <tr>
+    <td align="center">Year countdown and counters</td>
+    <td align="center">Details of a yearly event</td>
+    <td align="center">New counter</td>
+    <td align="center">Dark theme, Ukrainian</td>
+    <td align="center">Settings, French</td>
+  </tr>
+</table>
+
 ## Features
 
 - **Year countdown** — how much of the year has passed, days and weekends left.
@@ -46,8 +65,8 @@ It needs `rsvg-convert`.
 ```
 src/
 ├── app/            # Screens (Expo Router)
-│   ├── _layout.tsx # Theme and stack navigator
-│   ├── index.tsx   # Counter list
+│   ├── _layout.tsx # Providers and stack navigator
+│   ├── index.tsx   # Year countdown and counter groups
 │   ├── edit.tsx    # Create or edit a counter
 │   ├── [id].tsx    # Counter details
 │   └── settings.tsx# Language, theme, accent color, support
@@ -56,11 +75,23 @@ src/
 ├── i18n/           # Translations (en, uk, fr)
 ├── services/       # Storage (AsyncStorage)
 ├── theme/          # Colors
-├── utils/          # Day and percent calculations
+├── utils/          # Day, year and percent calculations
 └── AppProvider.tsx # Settings, theme and language for all screens
 ```
 
+## About the screenshots
+
+The screenshots come from the web build with demo data, at phone size (390×844, 2×).
+The web build uses the browser date input. Android and iOS use the native date picker.
+
 ## Roadmap
 
+- Reminders before an event.
+- Calendar view of all events.
+- Tags and pinned counters.
 - Home screen widgets. They need a development build.
 - GitHub Actions: build an `.apk` on each release.
+
+## License
+
+[MIT](LICENSE) © 2026 Vadym Loik
