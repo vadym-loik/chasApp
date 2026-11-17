@@ -38,6 +38,11 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 - English, Ukrainian and French. The app follows the phone language, or you can choose one in Settings.
 - All data stays on the device (AsyncStorage).
 
+## Install
+
+Download the latest `.apk` file from [Releases](https://github.com/vadym-loik/chasApp/releases) and open it on your Android phone.
+Android asks you to allow installs from this source. The APK supports 64-bit ARM phones (`arm64-v8a`).
+
 ## Run
 
 ```bash
