@@ -7,6 +7,7 @@ import {
 } from './counter.ts';
 import { resolveLanguage, STRINGS, ukPlural } from '../i18n/strings.ts';
 import type { CounterItem } from '../models/counter.ts';
+import { DEFAULT_SETTINGS, sanitizeSettings } from '../models/settings.ts';
 
 const { en, uk, fr } = STRINGS;
 const base: CounterItem = { id: '1', title: 't', emoji: '⭐', type: 'days_left', color: 'peach' };
@@ -151,4 +152,11 @@ test('groupCounters sorts upcoming events by date', () => {
     groups.map((g) => [g.key, g.data.map((i) => i.id)]),
     [['upcoming', ['near', 'far']], ['since', ['habit']], ['goals', ['goal']], ['past', ['old']]],
   );
+});
+
+test('sanitizeSettings keeps valid values and replaces damaged ones', () => {
+  assert.deepEqual(sanitizeSettings({ mode: 'dark', accent: 'teal', language: 'fr' }), { mode: 'dark', accent: 'teal', language: 'fr' });
+  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de' }), DEFAULT_SETTINGS);
+  assert.deepEqual(sanitizeSettings(null), DEFAULT_SETTINGS);
+  assert.deepEqual(sanitizeSettings('oops'), DEFAULT_SETTINGS);
 });

@@ -1,21 +1,33 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CounterItem } from '../models/counter';
-import { DEFAULT_SETTINGS, type Settings } from '../models/settings';
+import { sanitizeSettings, type Settings } from '../models/settings';
 
 const COUNTERS_KEY = 'counters:v1';
 const SETTINGS_KEY = 'settings:v1';
 
-async function readJSON<T>(key: string, fallback: T): Promise<T> {
+/** Reads saved JSON. Damaged data gives `undefined`, so the app still starts. */
+async function readJSON(key: string): Promise<unknown> {
   const raw = await AsyncStorage.getItem(key);
-  return raw ? (JSON.parse(raw) as T) : fallback;
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
 }
 
 async function writeJSON(key: string, value: unknown): Promise<void> {
   await AsyncStorage.setItem(key, JSON.stringify(value));
 }
 
-export function getCounters(): Promise<CounterItem[]> {
-  return readJSON<CounterItem[]>(COUNTERS_KEY, []);
+export async function getCounters(): Promise<CounterItem[]> {
+  const items = await readJSON(COUNTERS_KEY);
+  return Array.isArray(items) ? items.filter(isCounter) : [];
+}
+
+function isCounter(item: unknown): item is CounterItem {
+  const c = item as CounterItem;
+  return !!c && typeof c.id === 'string' && typeof c.title === 'string' && typeof c.type === 'string';
 }
 
 export async function getCounter(id: string): Promise<CounterItem | undefined> {
@@ -38,7 +50,7 @@ export async function deleteCounter(id: string): Promise<void> {
 }
 
 export async function getSettings(): Promise<Settings> {
-  return { ...DEFAULT_SETTINGS, ...(await readJSON<Partial<Settings>>(SETTINGS_KEY, {})) };
+  return sanitizeSettings(await readJSON(SETTINGS_KEY));
 }
 
 export function saveSettings(settings: Settings): Promise<void> {
