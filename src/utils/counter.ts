@@ -183,7 +183,8 @@ export function getCounterBreakdown(item: CounterItem, t: Strings, now: string =
     const { start, target } = getEventWindow(item, now);
     const left = daysBetween(now, target);
     if (left <= 0) return [];
-    const lines = [`${formatWeeksAndDays(left, t)} · ${t.weekendsLeft(countWeekends(now, target))}`];
+    const weekends = countWeekends(now, target);
+    const lines = [`${formatWeeksAndDays(left, t)} · ${weekends} ${t.weekendsLeft(weekends)}`];
     const total = daysBetween(start, target);
     if (total > 0) lines.push(t.daysOfTotal(Math.max(0, total - left), total));
     return lines;

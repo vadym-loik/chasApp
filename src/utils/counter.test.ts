@@ -80,6 +80,16 @@ test('dates use the language format', () => {
   assert.equal(getCounterDetails(item, en), 'until March 12, 2026');
   assert.equal(getCounterDetails(item, uk), 'до 12 березня 2026');
   assert.equal(getCounterDetails(item, fr), 'jusqu’au 12 mars 2026');
+  assert.equal(en.formatLongDay('2026-11-18'), 'Wednesday, November 18, 2026');
+  assert.equal(uk.formatLongDay('2026-11-18'), 'середа, 18 листопада 2026');
+  assert.equal(fr.formatLongDay('2026-11-18'), 'mercredi 18 novembre 2026');
+});
+
+test('weekendsLeft is only the label, like daysLeft', () => {
+  assert.equal(en.weekendsLeft(1), 'weekend left');
+  assert.equal(en.weekendsLeft(6), 'weekends left');
+  assert.equal(uk.weekendsLeft(6), 'вікендів попереду');
+  assert.equal(fr.weekendsLeft(6), 'week-ends restants');
 });
 
 test('resolveLanguage', () => {
