@@ -92,7 +92,8 @@
             }
           ]
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "chasapp"
   }

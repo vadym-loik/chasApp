@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mergeCounters } from '../models/backup';
 import { applyReminderHour, toCounter, type CounterItem, type NewCounter } from '../models/counter';
 import { sanitizeSettings, type Settings } from '../models/settings';
 import { today } from '../utils/counter';
@@ -72,6 +73,11 @@ export function updateCounter(item: CounterItem): Promise<void> {
 
 export function deleteCounter(id: string): Promise<void> {
   return queued(async () => saveCounters((await getCounters()).filter((c) => c.id !== id)));
+}
+
+/** Adds the counters from a backup. See mergeCounters(). */
+export function importCounters(items: CounterItem[]): Promise<void> {
+  return queued(async () => saveCounters(mergeCounters(await getCounters(), items)));
 }
 
 /**

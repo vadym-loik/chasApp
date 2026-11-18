@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
 import { ColorSwatches } from '../components/ColorSwatches';
@@ -8,13 +8,51 @@ import { OptionRow } from '../components/OptionRow';
 import { Segmented } from '../components/Segmented';
 import { LANGUAGES } from '../i18n/strings';
 import { THEME_MODES } from '../models/settings';
+import { backupAvailable, exportBackup, pickBackup } from '../services/backup';
+import { importCounters } from '../services/storage';
 import { ACCENT_KEYS, ACCENTS } from '../theme/colors';
+import { confirm } from '../utils/confirm';
 import { pinWidget, WIDGET_NAMES, widgetsAvailable } from '../widgets';
 
 const DONATE_URL = 'https://buymeacoffee.com/vadymloik';
 
 export default function SettingsScreen() {
   const { colors, settings, setSettings, t } = useApp();
+
+  async function exportCounters() {
+    try {
+      await exportBackup(t.exportBackup);
+    } catch (error) {
+      console.warn('Backup export failed', error);
+      Alert.alert(t.backup, t.exportFailed);
+    }
+  }
+
+  async function importFromFile() {
+    let items;
+    try {
+      items = await pickBackup();
+    } catch (error) {
+      console.warn('Backup import failed', error);
+      Alert.alert(t.backup, t.importInvalid);
+      return;
+    }
+    if (!items) return;
+    const count = items.length;
+    confirm(
+      { title: t.importTitle(count), message: t.importMessage, action: t.importAction, cancel: t.cancel },
+      async () => {
+        try {
+          await importCounters(items);
+          Alert.alert(t.backup, t.importDone(count));
+        } catch (error) {
+          console.warn('Backup import failed', error);
+          Alert.alert(t.backup, t.importFailed);
+        }
+      },
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.about}>
@@ -64,6 +102,14 @@ export default function SettingsScreen() {
           <Text style={[styles.cardText, { color: colors.muted }]}>{t.widgetsHint}</Text>
           <Button title={t.addYearWidget} icon="plus" variant="secondary" onPress={() => pinWidget(WIDGET_NAMES.year)} />
           <Button title={t.addCounterWidget} icon="plus" variant="secondary" onPress={() => pinWidget(WIDGET_NAMES.counter)} />
+        </Labeled>
+      )}
+
+      {backupAvailable && (
+        <Labeled label={t.backup}>
+          <Text style={[styles.cardText, { color: colors.muted }]}>{t.backupHint}</Text>
+          <Button title={t.exportBackup} icon="upload" variant="secondary" onPress={exportCounters} />
+          <Button title={t.importBackup} icon="download" variant="secondary" onPress={importFromFile} />
         </Labeled>
       )}
 

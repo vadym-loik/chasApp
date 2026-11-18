@@ -4,7 +4,7 @@
 
 - Latest release: **v1.3.0** (versionCode 4), Android APK on GitHub Releases. The release workflow built it.
 - All work is committed and pushed to `main`.
-- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (29 tests), `npx expo-doctor` (20/20).
+- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (32 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
 
 ## Releases
@@ -29,6 +29,8 @@
   - All counters: one custom date ("Choose a date"). Not for repeating countdowns.
   - Each counter has its own time (default 09:00).
   - Tap the notification to open the counter.
+- Backup (Android and iOS, not web): Settings → Export counters makes a JSON file and opens the share sheet.
+  Import counters adds the counters from a file. It never deletes a counter. A counter with the same id gets the version from the file.
 
 ## Where the code is
 
@@ -36,6 +38,8 @@
 - `src/models/counter.ts`: one type for each counter type (`CountdownCounter`, `SinceCounter`, `GoalCounter`).
   `toCounter()` reads saved data and fills missing fields with defaults, so old counters do not get lost.
 - `src/utils/counter.ts`: all date and counter logic, with tests in `counter.test.ts`. Reminder dates: `getNextReminders()`.
+- `src/models/backup.ts`: the backup file format and the import merge, with tests in `backup.test.ts`.
+  `src/services/backup.ts`: the file and the share sheet (`expo-file-system`, `expo-sharing`).
 - `src/services/storage.ts`: AsyncStorage. Each save updates the widgets and the reminders. All changes run in one queue.
   `migrateReminderHour()` moves the 1.2.0 global reminder hour to the counters.
 - `src/services/reminders.ts`: schedules notifications. It cancels all and schedules again after each change (one queue).
