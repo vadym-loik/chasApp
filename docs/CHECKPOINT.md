@@ -2,7 +2,7 @@
 
 ## State
 
-- Latest release: **v1.3.0** (versionCode 4), Android APK on GitHub Releases. The release workflow built it.
+- Latest release: **v1.4.0** (versionCode 5), Android APK on GitHub Releases. The release workflow built it.
 - All work is committed and pushed to `main`.
 - Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (32 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
@@ -15,6 +15,7 @@
 | 1.1.0 | 2 | Android widgets, fewer permissions |
 | 1.2.0 | 3 | Reminders for countdowns, swipe to edit or delete, wide widgets |
 | 1.3.0 | 4 | Reminder date and time for all counters, 12 card colors, year in the date, new year card |
+| 1.4.0 | 5 | Backup and restore, 3 reminders ahead for repeating events, better contrast, bug fixes |
 
 ## What the app has
 
