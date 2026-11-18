@@ -11,7 +11,7 @@ import type { ThemeMode } from '../models/settings';
 import { ACCENT_KEYS, ACCENTS } from '../theme/colors';
 import { pinWidget, WIDGET_NAMES, widgetsAvailable } from '../widgets';
 
-const DONATE_URL = 'https://www.buymeacoffee.com/';
+const DONATE_URL = 'https://buymeacoffee.com/vadymloik';
 const MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
 export default function SettingsScreen() {
