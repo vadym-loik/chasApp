@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
@@ -13,8 +13,9 @@ import { Field, Labeled } from '../components/Field';
 import { OptionRow } from '../components/OptionRow';
 import { Segmented } from '../components/Segmented';
 import {
-  COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, REPEATS, type CounterItem, type CounterType, type Repeat,
+  COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, REMINDERS, REPEATS, type CounterItem, type CounterType, type Reminder, type Repeat,
 } from '../models/counter';
+import { remindersAvailable, requestReminderPermission } from '../services/reminders';
 import { addCounter, getCounter, updateCounter } from '../services/storage';
 import { CARD_COLOR_KEYS, cardColor, type CardColorKey } from '../theme/colors';
 import { addDays, parseNumber, today } from '../utils/counter';
@@ -55,6 +56,7 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
   const [color, setColor] = useState(initial?.color ?? CARD_COLOR_KEYS[0]);
   const [targetDate, setTargetDate] = useState(initial?.targetDate ?? addDays(today(), 1, 'month'));
   const [repeat, setRepeat] = useState<Repeat>(initial?.repeat ?? 'none');
+  const [reminder, setReminder] = useState<Reminder>(initial?.reminder ?? 'none');
   const [startDate, setStartDate] = useState(initial?.startDate ?? today());
   const [initialValue, setInitialValue] = useState(optionalText(initial?.initialValue));
   const [currentValue, setCurrentValue] = useState(optionalText(initial?.currentValue));
@@ -67,12 +69,20 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
     setType(next);
   }
 
+  async function chooseReminder(next: Reminder) {
+    if (next !== 'none' && !(await requestReminderPermission(t))) {
+      Alert.alert(t.reminder, t.notificationsOff);
+      return;
+    }
+    setReminder(next);
+  }
+
   function buildItem(): Omit<CounterItem, 'id'> | string {
     const base = { title: title.trim(), emoji, type, color };
     if (!base.title) return t.errorName;
     if (type === 'days_left') {
       // Progress starts on the day the counter was created.
-      return { ...base, targetDate, repeat, startDate: initial?.startDate ?? today() };
+      return { ...base, targetDate, repeat, reminder, startDate: initial?.startDate ?? today() };
     }
     if (type === 'days_passed') return { ...base, startDate };
     const start = parseNumber(initialValue);
@@ -166,6 +176,18 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
                 onSelect={setRepeat}
               />
             </Labeled>
+            {remindersAvailable && (
+              <Labeled label={t.reminder}>
+                <Chips
+                  options={REMINDERS.map((key) => ({
+                    key,
+                    label: t.reminders[key],
+                    active: key === reminder,
+                    onPress: () => chooseReminder(key),
+                  }))}
+                />
+              </Labeled>
+            )}
           </>
         )}
         {type === 'days_passed' && <DateField label={t.startDate} value={startDate} onChange={setStartDate} />}

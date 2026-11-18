@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
 import 'dayjs/locale/uk.js';
-import type { CounterType, Repeat } from '../models/counter';
+import type { CounterType, Reminder, Repeat } from '../models/counter';
 import type { AccentKey, CardColorKey } from '../theme/colors';
 
 export type Language = 'en' | 'uk' | 'fr';
@@ -49,6 +49,12 @@ const en = {
   repeat: 'Repeat',
   repeats: { none: 'Never', monthly: 'Every month', yearly: 'Every year' } as Record<Repeat, string>,
   quickDates: { tomorrow: 'Tomorrow', week: 'In a week', month: 'In a month', year: 'In a year' },
+  reminder: 'Reminder',
+  reminders: { none: 'Off', on_day: 'On the day', day_before: '1 day before', week_before: '1 week before' } as Record<Reminder, string>,
+  reminderTime: 'Reminder time',
+  formatHour: (h: number) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`,
+  reminderBody: (days: number) => (days === 0 ? 'Today is the day! 🎉' : `In ${days} ${enPlural(days, 'day', 'days')}`),
+  notificationsOff: 'Notifications are off for Chas. Turn them on in the phone settings to get reminders.',
 
   types: {
     days_left: { label: 'Countdown', description: 'Days left until a date', placeholder: 'Vacation' },
@@ -134,6 +140,12 @@ const uk: Strings = {
   repeat: 'Повтор',
   repeats: { none: 'Ніколи', monthly: 'Щомісяця', yearly: 'Щороку' },
   quickDates: { tomorrow: 'Завтра', week: 'Через тиждень', month: 'Через місяць', year: 'Через рік' },
+  reminder: 'Нагадування',
+  reminders: { none: 'Вимкнено', on_day: 'У день події', day_before: 'За 1 день', week_before: 'За 1 тиждень' },
+  reminderTime: 'Час нагадувань',
+  formatHour: (h) => `${String(h).padStart(2, '0')}:00`,
+  reminderBody: (days) => (days === 0 ? 'Цей день настав! 🎉' : `Через ${days} ${ukPlural(days, ['день', 'дні', 'днів'])}`),
+  notificationsOff: 'Сповіщення для Chas вимкнено. Увімкніть їх у налаштуваннях телефона, щоб отримувати нагадування.',
 
   types: {
     days_left: { label: 'До події', description: 'Скільки днів залишилося до дати', placeholder: 'Відпустка' },
@@ -218,6 +230,12 @@ const fr: Strings = {
   repeat: 'Répétition',
   repeats: { none: 'Jamais', monthly: 'Chaque mois', yearly: 'Chaque année' },
   quickDates: { tomorrow: 'Demain', week: 'Dans une semaine', month: 'Dans un mois', year: 'Dans un an' },
+  reminder: 'Rappel',
+  reminders: { none: 'Désactivé', on_day: 'Le jour même', day_before: '1 jour avant', week_before: '1 semaine avant' },
+  reminderTime: 'Heure des rappels',
+  formatHour: (h) => `${String(h).padStart(2, '0')}:00`,
+  reminderBody: (days) => (days === 0 ? 'C’est le jour\u00A0! 🎉' : `Dans ${days} ${frPlural(days, 'jour', 'jours')}`),
+  notificationsOff: 'Les notifications de Chas sont désactivées. Activez-les dans les réglages du téléphone pour recevoir les rappels.',
 
   types: {
     days_left: { label: 'Compte à rebours', description: 'Jours restants avant une date', placeholder: 'Vacances' },

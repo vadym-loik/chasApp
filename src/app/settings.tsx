@@ -2,12 +2,14 @@ import Constants from 'expo-constants';
 import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
+import { Chips } from '../components/Chips';
 import { ColorSwatches } from '../components/ColorSwatches';
 import { Labeled } from '../components/Field';
 import { OptionRow } from '../components/OptionRow';
 import { Segmented } from '../components/Segmented';
 import { LANGUAGES } from '../i18n/strings';
-import type { ThemeMode } from '../models/settings';
+import { REMINDER_HOURS, type ThemeMode } from '../models/settings';
+import { remindersAvailable } from '../services/reminders';
 import { ACCENT_KEYS, ACCENTS } from '../theme/colors';
 import { pinWidget, WIDGET_NAMES, widgetsAvailable } from '../widgets';
 
@@ -59,6 +61,19 @@ export default function SettingsScreen() {
           onSelect={(accent) => setSettings({ accent })}
         />
       </Labeled>
+
+      {remindersAvailable && (
+        <Labeled label={t.reminderTime}>
+          <Chips
+            options={REMINDER_HOURS.map((hour) => ({
+              key: String(hour),
+              label: t.formatHour(hour),
+              active: hour === settings.reminderHour,
+              onPress: () => setSettings({ reminderHour: hour }),
+            }))}
+          />
+        </Labeled>
+      )}
 
       {widgetsAvailable && (
         <Labeled label={t.widgets}>

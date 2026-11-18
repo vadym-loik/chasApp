@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CounterItem } from '../models/counter';
 import { sanitizeSettings, type Settings } from '../models/settings';
 import { updateWidgets } from '../widgets';
+import { updateReminders } from './reminders';
 
 const COUNTERS_KEY = 'counters:v1';
 const SETTINGS_KEY = 'settings:v1';
@@ -36,10 +37,11 @@ export async function getCounter(id: string): Promise<CounterItem | undefined> {
   return (await getCounters()).find((c) => c.id === id);
 }
 
-// Widgets show counters and use the settings, so they must update after each change.
+// Widgets and reminders show counters and use the settings, so they must update after each change.
 async function saveCounters(items: CounterItem[]): Promise<void> {
   await writeJSON(COUNTERS_KEY, items);
   updateWidgets();
+  updateReminders();
 }
 
 export async function addCounter(item: Omit<CounterItem, 'id'>): Promise<CounterItem> {
@@ -64,6 +66,7 @@ export async function getSettings(): Promise<Settings> {
 export async function saveSettings(settings: Settings): Promise<void> {
   await writeJSON(SETTINGS_KEY, settings);
   updateWidgets();
+  updateReminders();
 }
 
 async function getWidgetMap(): Promise<Record<string, string>> {

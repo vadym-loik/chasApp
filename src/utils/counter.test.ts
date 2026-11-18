@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  countWeekends, getCounterBreakdown, getCounterDetails, getCounterStats, getEventWindow, getYearProgress,
+  countWeekends, getCounterBreakdown, getCounterDetails, getCounterStats, getEventWindow, getNextReminder, getYearProgress,
   groupCounters, isValidDate, parseNumber,
 } from './counter.ts';
 import { resolveLanguage, STRINGS, ukPlural } from '../i18n/strings.ts';
@@ -155,8 +155,44 @@ test('groupCounters sorts upcoming events by date', () => {
 });
 
 test('sanitizeSettings keeps valid values and replaces damaged ones', () => {
-  assert.deepEqual(sanitizeSettings({ mode: 'dark', accent: 'teal', language: 'fr' }), { mode: 'dark', accent: 'teal', language: 'fr' });
-  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de' }), DEFAULT_SETTINGS);
+  assert.deepEqual(
+    sanitizeSettings({ mode: 'dark', accent: 'teal', language: 'fr', reminderHour: 20 }),
+    { mode: 'dark', accent: 'teal', language: 'fr', reminderHour: 20 },
+  );
+  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de', reminderHour: 25 }), DEFAULT_SETTINGS);
   assert.deepEqual(sanitizeSettings(null), DEFAULT_SETTINGS);
   assert.deepEqual(sanitizeSettings('oops'), DEFAULT_SETTINGS);
+});
+
+test('getNextReminder sends the reminder before the event at the chosen hour', () => {
+  const now = new Date(2026, 10, 17, 12); // 17 November 2026, 12:00
+  const event = { ...base, targetDate: '2026-11-30' };
+  assert.equal(getNextReminder(event, 9, now), undefined);
+  assert.equal(getNextReminder({ ...event, reminder: 'none' }, 9, now), undefined);
+  assert.deepEqual(getNextReminder({ ...event, reminder: 'week_before' }, 9, now), { date: new Date(2026, 10, 23, 9), days: 7 });
+  assert.deepEqual(getNextReminder({ ...event, reminder: 'on_day' }, 20, now), { date: new Date(2026, 10, 30, 20), days: 0 });
+  // Other counter types have no reminders.
+  assert.equal(getNextReminder({ ...base, type: 'days_passed', startDate: '2026-11-01', reminder: 'on_day' }, 9, now), undefined);
+});
+
+test('getNextReminder skips a passed reminder, or moves it to the next date of a repeating event', () => {
+  const now = new Date(2026, 10, 17, 12);
+  const soon = { ...base, targetDate: '2026-11-20', reminder: 'week_before' as const };
+  assert.equal(getNextReminder(soon, 9, now), undefined);
+  assert.deepEqual(getNextReminder({ ...soon, repeat: 'monthly' }, 9, now), { date: new Date(2026, 11, 13, 9), days: 7 });
+  // Today at 9:00 has passed, so the yearly reminder moves to next year.
+  const birthday = { ...base, targetDate: '2000-11-17', repeat: 'yearly' as const, reminder: 'on_day' as const };
+  assert.deepEqual(getNextReminder(birthday, 9, now), { date: new Date(2027, 10, 17, 9), days: 0 });
+  assert.deepEqual(getNextReminder(birthday, 20, now), { date: new Date(2026, 10, 17, 20), days: 0 });
+  assert.equal(getNextReminder({ ...birthday, repeat: 'none' }, 9, now), undefined);
+});
+
+test('reminder text', () => {
+  assert.equal(en.reminderBody(1), 'In 1 day');
+  assert.equal(en.reminderBody(7), 'In 7 days');
+  assert.equal(uk.reminderBody(7), 'Через 7 днів');
+  assert.equal(fr.reminderBody(1), 'Dans 1 jour');
+  assert.equal(en.formatHour(20), '8 PM');
+  assert.equal(en.formatHour(12), '12 PM');
+  assert.equal(uk.formatHour(8), '08:00');
 });

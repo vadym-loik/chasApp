@@ -31,6 +31,7 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 - **Year countdown** — how much of the year has passed, days and weekends left.
 - **Countdown** — days left until a date, with a progress bar. It can repeat every month or every year (birthdays, bills).
 - **Days since** — count days since a date, for habits. You can start again from today.
+- **Reminders** (Android) — a notification on the day of a countdown, 1 day before or 1 week before. You choose the time in Settings. Tap the notification to open the counter.
 - **Goal** — progress from a start value to a target value, for example weight 88 → 80.
 - Counters in groups: upcoming (nearest first), since, goals and past.
 - Details: weeks and days left, weekends left, days passed of the total.

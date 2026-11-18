@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import type { Strings } from '../i18n/strings';
-import type { CounterItem } from '../models/counter';
+import { REMINDER_DAYS, type CounterItem } from '../models/counter.ts';
 
 export const DATE_FORMAT = 'YYYY-MM-DD';
 
@@ -58,6 +58,27 @@ export function getEventWindow(item: CounterItem, now: string = today()): { star
   let k = Math.max(1, dayjs(now).diff(target, unit));
   while (nth(k) < now) k++;
   return { start: nth(k - 1), target: nth(k) };
+}
+
+/**
+ * The next reminder of a countdown, at `hour` o'clock, and the days from it to the event.
+ * `undefined` if there is no reminder to send. When the reminder of a repeating event has passed,
+ * it moves to the next event date.
+ */
+export function getNextReminder(
+  item: CounterItem,
+  hour: number,
+  now: Date = new Date(),
+): { date: Date; days: number } | undefined {
+  if (item.type !== 'days_left' || !item.reminder || item.reminder === 'none') return undefined;
+  const days = REMINDER_DAYS[item.reminder];
+  const remindAt = (target: string) => dayjs(target).subtract(days, 'day').hour(hour).startOf('hour').toDate();
+  const { target } = getEventWindow(item, dayjs(now).format(DATE_FORMAT));
+  let date = remindAt(target);
+  if (date <= now && (item.repeat ?? 'none') !== 'none') {
+    date = remindAt(getEventWindow(item, addDays(target, 1)).target);
+  }
+  return date > now ? { date, days } : undefined;
 }
 
 export function getCounterStats(item: CounterItem, t: Strings, now: string = today()): CounterStats {

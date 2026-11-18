@@ -35,6 +35,13 @@
       "expo-status-bar",
       "@react-native-community/datetimepicker",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#EE5D3F"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",

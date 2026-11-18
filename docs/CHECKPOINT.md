@@ -13,6 +13,7 @@
 - Light, dark and system themes, six accent colors.
 - English, Ukrainian, French.
 - Android widgets: Year, and Counter (the user chooses the counter).
+- Android reminders for countdowns (`expo-notifications`): on the day, 1 day or 1 week before, at an hour from Settings.
 
 ## Build and release (Android)
 
@@ -39,10 +40,10 @@ Without this key, users cannot install updates over the old version.
 - Widget names in the Android widget list are English only.
 - `npm audit`: build-time issues in `picomatch` and `minimatch` (not in the APK). Update with the next Expo SDK.
 - iOS: needs a Mac or EAS Build, and an Apple Developer account to install on an iPhone.
-- The Buy Me a Coffee link in `src/app/settings.tsx` is a placeholder.
+- Reminders use inexact alarms (no `SCHEDULE_EXACT_ALARM`). Android can deliver them some minutes late.
+- Repeating countdowns schedule their next reminder when the app opens or a counter changes. If the user does not open the app for a full period, the next reminder does not come.
 
 ## Ideas for next time
 
-- Reminders before an event.
 - Calendar view, tags, pinned counters.
 - GitHub Actions to build the APK on each tag.
