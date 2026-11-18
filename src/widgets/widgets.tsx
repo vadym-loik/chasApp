@@ -27,7 +27,12 @@ function ringSvg(progress: number, accent: string): string {
 
 export function YearWidget({ colors, t, width, height, now }: WidgetTheme & { now: string }) {
   const year = getYearProgress(now);
-  const ring = Math.max(56, Math.min(width - 24, height - 56));
+  // A wide widget puts the ring on the left and the text on the right. Otherwise the text goes under the ring.
+  const wide = width >= height * 1.5;
+  const padding = 12;
+  const ring = wide
+    ? Math.max(56, Math.min(height - padding * 2, width / 2))
+    : Math.max(56, Math.min(width - padding * 2, height - 68)); // 68: padding and the two text lines
   return (
     <FlexWidget
       clickAction="OPEN_APP"
@@ -37,7 +42,8 @@ export function YearWidget({ colors, t, width, height, now }: WidgetTheme & { no
         width: 'match_parent',
         backgroundColor: c(colors.surface),
         borderRadius: 24,
-        padding: 12,
+        padding,
+        flexDirection: wide ? 'row' : 'column',
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -51,13 +57,21 @@ export function YearWidget({ colors, t, width, height, now }: WidgetTheme & { no
           />
         </FlexWidget>
       </OverlapWidget>
-      <TextWidget
-        text={`${year.daysLeft} ${t.daysLeft(year.daysLeft)}`}
-        maxLines={1}
-        truncate="END"
-        style={{ fontSize: 13, fontWeight: '600', color: c(colors.text), marginTop: 8 }}
-      />
-      <TextWidget text={String(year.year)} style={{ fontSize: 11, color: c(colors.muted) }} />
+      <FlexWidget
+        style={
+          wide
+            ? { flex: 1, marginLeft: 16, justifyContent: 'center' }
+            : { marginTop: 8, alignItems: 'center' }
+        }
+      >
+        <TextWidget
+          text={`${year.daysLeft} ${t.daysLeft(year.daysLeft)}`}
+          maxLines={wide ? 2 : 1}
+          truncate="END"
+          style={{ fontSize: wide ? 18 : 13, fontWeight: '600', color: c(colors.text) }}
+        />
+        <TextWidget text={String(year.year)} style={{ fontSize: wide ? 14 : 11, color: c(colors.muted) }} />
+      </FlexWidget>
     </FlexWidget>
   );
 }
@@ -69,7 +83,7 @@ interface CounterWidgetProps extends WidgetTheme {
   now: string;
 }
 
-export function CounterWidget({ item, colors, t, background, link, now }: CounterWidgetProps) {
+export function CounterWidget({ item, colors, t, width, height, background, link, now }: CounterWidgetProps) {
   const box = {
     height: 'match_parent',
     width: 'match_parent',
@@ -87,39 +101,80 @@ export function CounterWidget({ item, colors, t, background, link, now }: Counte
   }
 
   const stats = getCounterStats(item, t, now);
-  return (
-    <FlexWidget
-      clickAction="OPEN_URI"
-      clickActionData={{ uri: link }}
-      accessibilityLabel={`${item.title}: ${stats.value} ${stats.label}`}
-      style={{ ...box, justifyContent: 'space-between' }}
-    >
-      <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', width: 'match_parent' }}>
-        <TextWidget text={item.emoji} style={{ fontSize: 20 }} />
-        <TextWidget
-          text={item.title}
-          maxLines={1}
-          truncate="END"
-          style={{ fontSize: 14, fontWeight: '600', color: c(colors.text), marginLeft: 8 }}
-        />
+  // A wide widget puts the number on the left, and the name, label and progress on the right.
+  const wide = width >= height * 1.5;
+
+  const title = (
+    <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', width: 'match_parent' }}>
+      <TextWidget text={item.emoji} style={{ fontSize: 20 }} />
+      <TextWidget
+        text={item.title}
+        maxLines={1}
+        truncate="END"
+        style={{ fontSize: wide ? 16 : 14, fontWeight: '600', color: c(colors.text), marginLeft: 8 }}
+      />
+    </FlexWidget>
+  );
+  const value = (
+    <TextWidget
+      text={stats.value}
+      style={{ fontSize: wide ? 56 : 40, fontWeight: '800', color: c(colors.text), adjustsFontSizeToFit: true }}
+    />
+  );
+  const label = (
+    <TextWidget
+      text={stats.label}
+      maxLines={1}
+      truncate="END"
+      style={{ fontSize: wide ? 14 : 12, color: c(colors.muted), marginTop: wide ? 4 : 0 }}
+    />
+  );
+  const progress =
+    stats.progress !== undefined ? (
+      <FlexWidget
+        style={{
+          flexDirection: 'row',
+          width: 'match_parent',
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: c(colors.track),
+          marginTop: wide ? 12 : 0,
+        }}
+      >
+        <FlexWidget style={{ flex: Math.max(stats.progress, 0.001), height: 6, borderRadius: 3, backgroundColor: c(colors.accent) }} />
+        <FlexWidget style={{ flex: Math.max(1 - stats.progress, 0.001), height: 6 }} />
       </FlexWidget>
-      <FlexWidget>
-        <TextWidget
-          text={stats.value}
-          style={{ fontSize: 40, fontWeight: '800', color: c(colors.text), adjustsFontSizeToFit: true }}
-        />
-        <TextWidget text={stats.label} maxLines={1} truncate="END" style={{ fontSize: 12, color: c(colors.muted) }} />
-      </FlexWidget>
-      {stats.progress !== undefined ? (
-        <FlexWidget
-          style={{ flexDirection: 'row', width: 'match_parent', height: 6, borderRadius: 3, backgroundColor: c(colors.track) }}
-        >
-          <FlexWidget style={{ flex: Math.max(stats.progress, 0.001), height: 6, borderRadius: 3, backgroundColor: c(colors.accent) }} />
-          <FlexWidget style={{ flex: Math.max(1 - stats.progress, 0.001), height: 6 }} />
+    ) : (
+      <FlexWidget style={{ height: 6 }} />
+    );
+
+  const action = {
+    clickAction: 'OPEN_URI',
+    clickActionData: { uri: link },
+    accessibilityLabel: `${item.title}: ${stats.value} ${stats.label}`,
+  } as const;
+
+  // The widget renderer does not support fragments, so each layout has its own root.
+  if (wide) {
+    return (
+      <FlexWidget {...action} style={{ ...box, flexDirection: 'row', alignItems: 'center' }}>
+        {value}
+        <FlexWidget style={{ flex: 1, marginLeft: 16, justifyContent: 'center' }}>
+          {title}
+          {label}
+          {progress}
         </FlexWidget>
-      ) : (
-        <FlexWidget style={{ height: 6 }} />
-      )}
+      </FlexWidget>
+    );
+  }
+  return (
+    <FlexWidget {...action} style={{ ...box, justifyContent: 'space-between' }}>
+      {title}
+      <FlexWidget>
+        {value}
+        {label}
+      </FlexWidget>
+      {progress}
     </FlexWidget>
   );
 }
