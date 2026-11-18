@@ -36,6 +36,7 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 - Counters in groups: upcoming (nearest first), since, goals and past.
 - Details: weeks and days left, weekends left, days passed of the total.
 - Create and edit counters with a live preview, quick dates, emoji and card colors.
+- Swipe a counter on the home screen: to the right to edit it, to the left to delete it.
 - Android home screen widgets: the year, and one counter of your choice. Add them from Settings or from the home screen.
 - Native date picker on Android and iOS.
 - Light, dark and system themes, and six accent colors.

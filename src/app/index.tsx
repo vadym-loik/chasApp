@@ -4,8 +4,8 @@ import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-nat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
-import { CounterCard } from '../components/CounterCard';
 import { Icon } from '../components/Icon';
+import { SwipeableCounterCard } from '../components/SwipeableCounterCard';
 import { YearCard } from '../components/YearCard';
 import type { CounterItem } from '../models/counter';
 import { getCounters } from '../services/storage';
@@ -19,13 +19,13 @@ export default function HomeScreen() {
   const [items, setItems] = useState<CounterItem[] | null>(null);
   const [now, setNow] = useState(today());
 
+  const load = useCallback(() => {
+    setNow(today());
+    getCounters().then(setItems);
+  }, []);
+
   // Reload on focus, so new counters and a new day show up.
-  useFocusEffect(
-    useCallback(() => {
-      setNow(today());
-      getCounters().then(setItems);
-    }, []),
-  );
+  useFocusEffect(load);
 
   return (
     <View style={styles.screen}>
@@ -61,7 +61,7 @@ export default function HomeScreen() {
         )}
         renderItem={({ item }) => (
           <View style={styles.item}>
-            <CounterCard item={item} onPress={() => router.push(`/${item.id}`)} />
+            <SwipeableCounterCard item={item} onDeleted={load} />
           </View>
         )}
         ListEmptyComponent={items ? <EmptyState /> : undefined}

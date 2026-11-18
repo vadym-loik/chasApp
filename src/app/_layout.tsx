@@ -1,13 +1,18 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider, useApp } from '../AppProvider';
 import { useReminders } from '../services/reminders';
 
 export default function RootLayout() {
   return (
-    <AppProvider>
-      <AppStack />
-    </AppProvider>
+    // Swipe actions on the counter cards need the gesture handler root.
+    <GestureHandlerRootView style={styles.root}>
+      <AppProvider>
+        <AppStack />
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -46,3 +51,7 @@ function AppStack() {
     </NavigationThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});

@@ -7,9 +7,9 @@ import { Field } from '../components/Field';
 import { HeaderButton } from '../components/HeaderButton';
 import { ProgressBar } from '../components/ProgressBar';
 import type { CounterItem } from '../models/counter';
-import { deleteCounter, getCounter, updateCounter } from '../services/storage';
+import { getCounter, updateCounter } from '../services/storage';
 import { useApp } from '../AppProvider';
-import { confirm } from '../utils/confirm';
+import { confirm, confirmDelete } from '../utils/confirm';
 import { getCounterBreakdown, getCounterDetails, getCounterStats, parseNumber, today } from '../utils/counter';
 
 export default function DetailScreen() {
@@ -53,13 +53,7 @@ export default function DetailScreen() {
   }
 
   function remove() {
-    confirm(
-      { title: t.deleteTitle, message: t.deleteMessage(item!.title), action: t.delete, cancel: t.cancel },
-      async () => {
-        await deleteCounter(id);
-        router.back();
-      },
-    );
+    confirmDelete(item!, t, () => router.back());
   }
 
   return (
