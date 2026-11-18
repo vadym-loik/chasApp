@@ -2,64 +2,107 @@
 
 ## State
 
-- Latest release: **v1.3.0** (versionCode 4), Android APK on GitHub Releases. Built by the release workflow.
+- Latest release: **v1.3.0** (versionCode 4), Android APK on GitHub Releases. The release workflow built it.
 - All work is committed and pushed to `main`.
-- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (25 tests), `npx expo-doctor`.
+- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (25 tests), `npx expo-doctor` (20/20).
+- CI and the release workflow pass on GitHub.
+
+## Releases
+
+| Version | versionCode | Changes |
+|---|---|---|
+| 1.0.0 | 1 | First release |
+| 1.1.0 | 2 | Android widgets, fewer permissions |
+| 1.2.0 | 3 | Reminders for countdowns, swipe to edit or delete, wide widgets |
+| 1.3.0 | 4 | Reminder date and time for all counters, 12 card colors, year in the date, new year card |
 
 ## What the app has
 
 - Countdowns (with monthly and yearly repeat), "days since" counters, goals.
-- Year countdown card on the home screen.
-- Light, dark and system themes, six accent colors.
+- Home screen: the date with the year, and a year card (ring, days left and weekends left side by side, day of the year).
+- Swipe a counter card: right to edit, left to delete (with a confirm dialog).
+- 12 card colors. Light, dark and system themes, six accent colors.
 - English, Ukrainian, French.
-- Android widgets: Year, and Counter (the user chooses the counter).
-- Swipe a counter card: right to edit, left to delete.
-- Wide widgets put the text beside the ring or the number.
-- Android reminders (`expo-notifications`). Countdowns: on the day, 1 day or 1 week before. All counters: one custom date
-  (not for repeating countdowns). Each counter has its own time. The 1.2.0 global hour moves to the counters at start.
-- 12 card colors.
+- Android widgets: Year, and Counter (the user chooses the counter). Wide widgets put the text beside the ring or the number.
+- Android reminders (`expo-notifications`):
+  - Countdowns: on the day, 1 day or 1 week before.
+  - All counters: one custom date ("Choose a date"). Not for repeating countdowns.
+  - Each counter has its own time (default 09:00).
+  - Tap the notification to open the counter.
+
+## Where the code is
+
+- `src/app/`: screens (Expo Router). `index` home, `[id]` details, `edit` form, `settings`.
+- `src/utils/counter.ts`: all date and counter logic, with tests in `counter.test.ts`. Reminder dates: `getNextReminder()`.
+- `src/services/storage.ts`: AsyncStorage. Each save updates the widgets and the reminders.
+  `migrateReminderHour()` moves the 1.2.0 global reminder hour to the counters.
+- `src/services/reminders.ts`: schedules notifications. It cancels all and schedules again after each change (one queue).
+- `src/widgets/`: Android widgets. The widget renderer does not support React fragments (`<>`).
+- `src/i18n/strings.ts`: all text. `t.daysLeft(n)` and `t.weekendsLeft(n)` give only the label, not the number.
+- `src/components/DateField.tsx`: date or time picker (`mode="time"`), with a web version.
 
 ## Build and release (Android)
 
-### With GitHub Actions
+### With GitHub Actions (normal way)
+
+1. Raise `expo.version` and `expo.android.versionCode` in `app.json`, and `version` in `package.json`.
+   Then `npm install --package-lock-only`.
+2. Commit, then `git tag -a vX.Y.Z -m "Chas X.Y.Z"` and `git push origin main vX.Y.Z`.
+3. The release workflow builds and signs the APK (about 15 minutes) and creates a **draft** release.
+4. Write the notes (`gh release edit vX.Y.Z --notes-file ...`), then publish (`gh release edit vX.Y.Z --draft=false --latest`).
+
+Details:
 
 - `.github/workflows/ci.yml`: typecheck, lint and tests on each push to `main` and each pull request.
-- `.github/workflows/release.yml`: on a tag `vX.Y.Z`, builds and signs the APK and creates a **draft** release.
-  Edit the notes, then publish. The tag must match `expo.version` in `app.json`.
+- `.github/workflows/release.yml`: the tag must match `expo.version` in `app.json`.
 - The secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS` are in the GitHub
   environment `release`. It accepts only `v*` tags. To run the workflow by hand, choose a tag, not `main`.
-- The actions are pinned to commit hashes.
+- The actions are pinned to commit hashes. To update an action, change the hash and the version comment together.
 
-Steps: raise the versions (step 1 below), commit, then `git tag -a vX.Y.Z -m "Chas X.Y.Z"` and `git push origin main vX.Y.Z`.
+### On this computer (backup way)
 
-### On this computer
-
-Tools on this computer (not global):
+Tools (not global):
 
 - JDK 17: `mise where java@temurin-17`
-- Android SDK: `~/Android/Sdk`
+- Android SDK: `~/Android/Sdk` (build-tools 37.0.0)
 - Emulator profile `chas-test` (Android 16): `ANDROID_AVD_HOME=~/.config/.android/avd`
 
 Steps:
 
-1. Raise `expo.version` and `expo.android.versionCode` in `app.json`, and `version` in `package.json`.
-2. `npx expo prebuild --platform android --clean`, then put back the `android` and `ios` scripts in `package.json` (prebuild changes them).
+1. Raise the versions (as above).
+2. `CI=1 npx expo prebuild --platform android --clean`, then put back the `android` and `ios` scripts in `package.json` (prebuild changes them).
 3. `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a`
 4. Sign with `apksigner` (put `$JAVA_HOME/bin` on `PATH`) and the release key.
 5. Tag `vX.Y.Z`, push the tag, `gh release create` with the APK.
 
 Release key: `~/.local/share/chasapp/` (keystore and password). Keep a backup. It is not in git.
 Without this key, users cannot install updates over the old version.
+Certificate SHA-256: `8927b7fc…48e89b93`. Each new APK must have the same one.
+
+## Not yet tested on a phone
+
+These parts pass the checks, but nobody has used them on a device yet:
+
+- Reminders: the notification, the tap that opens the counter, the custom date, the time picker.
+- The move of the 1.2.0 reminder hour to the counters.
+- Swipe to edit or delete.
+- The new year card and the wide widgets.
 
 ## Known limits
 
 - Widgets refresh every 30 minutes (Android minimum). Widgets do not work in Expo Go.
 - Widget names in the Android widget list are English only.
 - `npm audit`: build-time issues in `picomatch` and `minimatch` (not in the APK). Update with the next Expo SDK.
-- iOS: needs a Mac or EAS Build, and an Apple Developer account to install on an iPhone.
+- iOS: needs a Mac or EAS Build, and an Apple Developer account to install on an iPhone. Reminders are Android only.
 - Reminders use inexact alarms (no `SCHEDULE_EXACT_ALARM`). Android can deliver them some minutes late.
-- Repeating countdowns schedule their next reminder when the app opens or a counter changes. If the user does not open the app for a full period, the next reminder does not come.
+- Repeating countdowns schedule their next reminder when the app opens or a counter changes.
+  If the user does not open the app for a full period, the next reminder does not come.
+- A custom reminder comes only once. There is no repeating reminder (for example, each week for a goal).
+- Swipe actions have no screen reader support. The details screen still has edit and delete.
+- Home screen on Android: the list scrolls under the status bar, so the clock covers the content. Not fixed yet.
 
 ## Ideas for next time
 
+- Add a screenshot of the reminder options to the README (from a phone; the web build has no reminders).
+- Repeating reminders, for example each week to update a goal.
 - Calendar view, tags, pinned counters.
