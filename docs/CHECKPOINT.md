@@ -1,10 +1,10 @@
-# Checkpoint — 17 November 2026
+# Checkpoint — 18 November 2026
 
 ## State
 
-- Latest release: **v1.1.0** (versionCode 2), Android APK on GitHub Releases.
+- Latest release: **v1.2.0** (versionCode 3), Android APK on GitHub Releases.
 - All work is committed and pushed to `main`.
-- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (19 tests), `npx expo-doctor`.
+- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (22 tests), `npx expo-doctor`.
 
 ## What the app has
 
@@ -13,6 +13,8 @@
 - Light, dark and system themes, six accent colors.
 - English, Ukrainian, French.
 - Android widgets: Year, and Counter (the user chooses the counter).
+- Swipe a counter card: right to edit, left to delete.
+- Wide widgets put the text beside the ring or the number.
 - Android reminders for countdowns (`expo-notifications`): on the day, 1 day or 1 week before, at an hour from Settings.
 
 ## Build and release (Android)
