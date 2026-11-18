@@ -2,9 +2,9 @@
 
 ## State
 
-- Latest release: **v1.2.0** (versionCode 3), Android APK on GitHub Releases.
+- Latest release: **v1.3.0** (versionCode 4), Android APK on GitHub Releases. Built by the release workflow.
 - All work is committed and pushed to `main`.
-- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (22 tests), `npx expo-doctor`.
+- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (25 tests), `npx expo-doctor`.
 
 ## What the app has
 
