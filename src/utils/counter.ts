@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import type { Strings } from '../i18n/strings';
 import {
-  DEFAULT_REMINDER_TIME, REMINDER_DAYS, REMINDERS, type CounterItem, type CounterType, type Reminder, type Repeat,
+  DEFAULT_REMINDER_TIME, REMINDER_DAYS, REMINDERS, type CounterItem, type CounterType, type CountdownCounter, type Reminder,
+  type Repeat,
 } from '../models/counter.ts';
 
 export const DATE_FORMAT = 'YYYY-MM-DD';
@@ -11,6 +12,11 @@ export interface CounterStats {
   value: string; // main text on the card: "12", "50%", "🎉"
   label: string; // text under the value: "days left"
   progress?: number; // 0..1, if a progress bar applies
+}
+
+/** The value and the label in one line: "12 days left". */
+export function statsText(stats: CounterStats): string {
+  return `${stats.value} ${stats.label}`;
 }
 
 export function today(): string {
@@ -55,10 +61,9 @@ const REPEAT_UNIT = { monthly: 'month', yearly: 'year' } as const;
  * The period a countdown runs in: from `start` to the next event date `target`.
  * A repeating event moves to its next date after it passes. Its period starts at the previous date.
  */
-export function getEventWindow(item: CounterItem, now: string = today()): { start: string; target: string } {
-  const target = item.targetDate ?? now;
-  const repeat = item.repeat ?? 'none';
-  if (repeat === 'none' || target >= now) return { start: item.startDate ?? now, target };
+export function getEventWindow(item: CountdownCounter, now: string = today()): { start: string; target: string } {
+  const { targetDate: target, repeat } = item;
+  if (repeat === 'none' || target >= now) return { start: item.startDate, target };
   const unit = REPEAT_UNIT[repeat];
   // Count from the first date each time, so "31 January" stays on the last day of short months.
   const nth = (k: number) => addDays(target, k, unit);
@@ -93,8 +98,7 @@ function reminderBody(item: CounterItem, t: Strings, day: string): string {
     const left = daysBetween(day, getEventWindow(item, day).target);
     if (left >= 0) return t.reminderBody(left);
   }
-  const stats = getCounterStats(item, t, day);
-  return `${stats.value} ${stats.label}`;
+  return statsText(getCounterStats(item, t, day));
 }
 
 /**
@@ -107,21 +111,45 @@ export function getNextReminder(
   now: Date = new Date(),
 ): { date: Date; body: string } | undefined {
   const reminder = item.reminder ?? 'none';
-  if (reminder === 'none' || !getReminderOptions(item.type, item.repeat).includes(reminder)) return undefined;
+  const repeat = item.type === 'days_left' ? item.repeat : 'none';
+  if (reminder === 'none' || !getReminderOptions(item.type, repeat).includes(reminder)) return undefined;
   const time = item.reminderTime ?? DEFAULT_REMINDER_TIME;
 
   if (reminder === 'custom') {
     if (!item.reminderDate || !isFutureCustomReminder(item, now)) return undefined;
     return { date: reminderAt(item.reminderDate, time), body: reminderBody(item, t, item.reminderDate) };
   }
+  // getReminderOptions() allows reminders before the event only for countdowns.
+  if (item.type !== 'days_left') return undefined;
 
   const remindDay = (target: string) => addDays(target, -REMINDER_DAYS[reminder]);
   let day = remindDay(getEventWindow(item, dayjs(now).format(DATE_FORMAT)).target);
-  if (reminderAt(day, time) <= now && (item.repeat ?? 'none') !== 'none') {
+  if (reminderAt(day, time) <= now && repeat !== 'none') {
     day = remindDay(getEventWindow(item, addDays(day, REMINDER_DAYS[reminder] + 1)).target);
   }
   const date = reminderAt(day, time);
   return date > now ? { date, body: reminderBody(item, t, day) } : undefined;
+}
+
+/**
+ * The next `count` reminders of a counter. Only a repeating countdown has more than one.
+ * The app schedules some dates ahead, so reminders still come when the user does not open the app for a while.
+ */
+export function getNextReminders(
+  item: CounterItem,
+  t: Strings,
+  count: number,
+  now: Date = new Date(),
+): { date: Date; body: string }[] {
+  const reminders = [];
+  let after = now;
+  while (reminders.length < count) {
+    const next = getNextReminder(item, t, after);
+    if (!next) break;
+    reminders.push(next);
+    after = next.date;
+  }
+  return reminders;
 }
 
 export function getCounterStats(item: CounterItem, t: Strings, now: string = today()): CounterStats {
@@ -136,15 +164,12 @@ export function getCounterStats(item: CounterItem, t: Strings, now: string = tod
       return { value: String(left), label: t.daysLeft(left), progress };
     }
     case 'days_passed': {
-      const passed = Math.max(0, daysBetween(item.startDate ?? now, now));
+      const passed = Math.max(0, daysBetween(item.startDate, now));
       return { value: String(passed), label: t.daysPassed(passed) };
     }
     case 'goal_progress': {
-      const { initialValue: initial, targetValue: target } = item;
-      if (initial === undefined || target === undefined || initial === target) {
-        return { value: t.formatPercent(0, 0), label: t.done, progress: 0 };
-      }
-      const current = item.currentValue ?? initial;
+      const { initialValue: initial, currentValue: current, targetValue: target } = item;
+      if (initial === target) return { value: t.formatPercent(0, 0), label: t.done, progress: 0 };
       const progress = clamp01((current - initial) / (target - initial));
       const percent = Math.round(progress * 100);
       return { value: t.formatPercent(percent, 0), label: percent === 100 ? t.goalReached : t.done, progress };
@@ -156,16 +181,15 @@ export function getCounterStats(item: CounterItem, t: Strings, now: string = tod
 export function getCounterDetails(item: CounterItem, t: Strings, now: string = today()): string {
   switch (item.type) {
     case 'days_left': {
-      if (!item.targetDate) return '';
       const until = t.until(t.formatDate(getEventWindow(item, now).target));
-      const repeat = item.repeat ?? 'none';
-      return repeat === 'none' ? until : `${until} · ${t.repeats[repeat]}`;
+      return item.repeat === 'none' ? until : `${until} · ${t.repeats[item.repeat]}`;
     }
     case 'days_passed':
-      return item.startDate ? t.since(t.formatDate(item.startDate)) : '';
+      return t.since(t.formatDate(item.startDate));
     case 'goal_progress':
-      if (item.initialValue === undefined || item.targetValue === undefined) return '';
-      return t.goalDetails(item.initialValue, item.targetValue, item.currentValue ?? item.initialValue);
+      // The same start and target means damaged values. getCounterStats() shows 0% for them.
+      if (item.initialValue === item.targetValue) return '';
+      return t.goalDetails(item.initialValue, item.targetValue, item.currentValue);
   }
 }
 
@@ -190,7 +214,7 @@ export function getCounterBreakdown(item: CounterItem, t: Strings, now: string =
     return lines;
   }
   if (item.type === 'days_passed') {
-    const passed = daysBetween(item.startDate ?? now, now);
+    const passed = daysBetween(item.startDate, now);
     return passed >= 7 ? [formatWeeksAndDays(passed, t)] : [];
   }
   return [];
@@ -228,7 +252,7 @@ export function groupCounters(
   items: CounterItem[],
   now: string = today(),
 ): { key: SectionKey; data: CounterItem[] }[] {
-  const daysLeft = (i: CounterItem) => daysBetween(now, getEventWindow(i, now).target);
+  const daysLeft = (i: CountdownCounter) => daysBetween(now, getEventWindow(i, now).target);
   const countdowns = items.filter((i) => i.type === 'days_left');
   const sections: { key: SectionKey; data: CounterItem[] }[] = [
     { key: 'upcoming', data: countdowns.filter((i) => daysLeft(i) >= 0).sort((a, b) => daysLeft(a) - daysLeft(b)) },

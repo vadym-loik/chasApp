@@ -100,6 +100,7 @@ const en = {
   errorValues: 'Enter the start and target values.',
   errorSameValues: 'The target must be different from the start value.',
   errorCurrent: 'Enter the current value.',
+  errorSave: 'Could not save the counter. Try again.',
 
   notFound: 'Counter not found.',
   currentValue: 'Current value',
@@ -197,6 +198,7 @@ const uk: Strings = {
   errorValues: 'Введіть початкове і цільове значення.',
   errorSameValues: 'Цільове значення має відрізнятися від початкового.',
   errorCurrent: 'Введіть поточне значення.',
+  errorSave: 'Не вдалося зберегти лічильник. Спробуйте ще раз.',
 
   notFound: 'Лічильник не знайдено.',
   currentValue: 'Поточне значення',
@@ -295,6 +297,7 @@ const fr: Strings = {
   errorValues: 'Saisissez la valeur de départ et l’objectif.',
   errorSameValues: 'L’objectif doit être différent de la valeur de départ.',
   errorCurrent: 'Saisissez la valeur actuelle.',
+  errorSave: 'Impossible d’enregistrer le compteur. Réessayez.',
 
   notFound: 'Compteur introuvable.',
   currentValue: 'Valeur actuelle',

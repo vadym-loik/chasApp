@@ -7,7 +7,7 @@ import { Field } from '../components/Field';
 import { HeaderButton } from '../components/HeaderButton';
 import { ProgressBar } from '../components/ProgressBar';
 import { useReload } from '../hooks/useReload';
-import type { CounterItem } from '../models/counter';
+import type { CounterItem, SinceCounter } from '../models/counter';
 import { getCounter, updateCounter } from '../services/storage';
 import { useApp } from '../AppProvider';
 import { confirm, confirmDelete } from '../utils/confirm';
@@ -23,7 +23,7 @@ export default function DetailScreen() {
   const load = useCallback(async () => {
     const c = await getCounter(id);
     setItem(c ?? null);
-    setNewValue(c?.currentValue === undefined ? '' : String(c.currentValue));
+    setNewValue(c?.type === 'goal_progress' ? String(c.currentValue) : '');
   }, [id]);
 
   // Reload when the user comes back from the edit screen, or to the app on a new day.
@@ -37,20 +37,16 @@ export default function DetailScreen() {
   const stats = getCounterStats(item, t);
   const parsedValue = parseNumber(newValue);
 
-  async function update(changes: Partial<CounterItem>) {
-    await updateCounter(id, changes);
+  async function update(next: CounterItem) {
+    await updateCounter(next);
     await load();
   }
 
-  function reset() {
+  function reset(counter: SinceCounter) {
     confirm(
       { title: t.startOverTitle, message: t.startOverMessage, action: t.startOver, cancel: t.cancel },
-      () => update({ startDate: today() }),
+      () => update({ ...counter, startDate: today() }),
     );
-  }
-
-  function remove() {
-    confirmDelete(item!, t, () => router.back());
   }
 
   return (
@@ -102,15 +98,15 @@ export default function DetailScreen() {
               <Button
                 title={t.update}
                 disabled={parsedValue === undefined || parsedValue === item.currentValue}
-                onPress={() => update({ currentValue: parsedValue })}
+                onPress={() => parsedValue !== undefined && update({ ...item, currentValue: parsedValue })}
               />
             </View>
           </View>
         )}
         {item.type === 'days_passed' && (
-          <Button title={t.startOver} icon="reset" variant="secondary" onPress={reset} />
+          <Button title={t.startOver} icon="reset" variant="secondary" onPress={() => reset(item)} />
         )}
-        <Button title={t.delete} icon="trash" variant="danger" onPress={remove} />
+        <Button title={t.delete} icon="trash" variant="danger" onPress={() => confirmDelete(item, t, () => router.back())} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

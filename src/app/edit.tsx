@@ -13,8 +13,8 @@ import { Field, Labeled } from '../components/Field';
 import { OptionRow } from '../components/OptionRow';
 import { Segmented } from '../components/Segmented';
 import {
-  COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, DEFAULT_REMINDER_TIME, REPEATS, type CounterItem, type CounterType, type Reminder,
-  type Repeat,
+  COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, DEFAULT_REMINDER_TIME, REPEATS, type CounterItem, type CounterType, type NewCounter,
+  type Reminder, type Repeat,
 } from '../models/counter';
 import { remindersAvailable, requestReminderPermission } from '../services/reminders';
 import { addCounter, getCounter, updateCounter } from '../services/storage';
@@ -51,22 +51,25 @@ const QUICK_DATES = [
 function CounterForm({ initial }: { initial: CounterItem | null }) {
   const { colors, scheme, t } = useApp();
   const insets = useSafeAreaInsets();
+  const countdown = initial?.type === 'days_left' ? initial : undefined;
+  const since = initial?.type === 'days_passed' ? initial : undefined;
+  const goal = initial?.type === 'goal_progress' ? initial : undefined;
   const [type, setType] = useState<CounterType>(initial?.type ?? 'days_left');
   const [title, setTitle] = useState(initial?.title ?? '');
   const [emoji, setEmoji] = useState(initial?.emoji ?? COUNTER_TYPE_EMOJI.days_left);
   const [color, setColor] = useState(initial?.color ?? CARD_COLOR_KEYS[0]);
-  const [targetDate, setTargetDate] = useState(initial?.targetDate ?? addDays(today(), 1, 'month'));
-  const [repeat, setRepeat] = useState<Repeat>(initial?.repeat ?? 'none');
+  const [targetDate, setTargetDate] = useState(countdown?.targetDate ?? addDays(today(), 1, 'month'));
+  const [repeat, setRepeat] = useState<Repeat>(countdown?.repeat ?? 'none');
   // A custom reminder that has passed is off: the user must choose a new date.
   const [reminder, setReminder] = useState<Reminder>(
     initial?.reminder === 'custom' && !isFutureCustomReminder(initial) ? 'none' : (initial?.reminder ?? 'none'),
   );
   const [reminderTime, setReminderTime] = useState(initial?.reminderTime ?? DEFAULT_REMINDER_TIME);
   const [reminderDate, setReminderDate] = useState(initial?.reminderDate ?? addDays(today(), 1));
-  const [startDate, setStartDate] = useState(initial?.startDate ?? today());
-  const [initialValue, setInitialValue] = useState(optionalText(initial?.initialValue));
-  const [currentValue, setCurrentValue] = useState(optionalText(initial?.currentValue));
-  const [targetValue, setTargetValue] = useState(optionalText(initial?.targetValue));
+  const [startDate, setStartDate] = useState(since?.startDate ?? today());
+  const [initialValue, setInitialValue] = useState(optionalText(goal?.initialValue));
+  const [currentValue, setCurrentValue] = useState(optionalText(goal?.currentValue));
+  const [targetValue, setTargetValue] = useState(optionalText(goal?.targetValue));
   const [error, setError] = useState('');
   // Blocks a second tap while the first save runs, so one tap makes one counter.
   const [saving, setSaving] = useState(false);
@@ -96,59 +99,58 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
     setReminder(next);
   }
 
-  function buildItem(): Omit<CounterItem, 'id'> | string {
+  /** The counter from the form. A value that the user did not enter yet gets the start value. */
+  function buildDraft(): NewCounter {
     const base = {
       title: title.trim(),
       emoji,
-      type,
       color,
       reminder,
       reminderTime: reminder === 'none' ? undefined : reminderTime,
       reminderDate: reminder === 'custom' ? reminderDate : undefined,
     };
-    if (!base.title) return t.errorName;
-    if (reminder === 'custom' && !isFutureCustomReminder(base)) return t.errorReminderPast;
-    if (type === 'days_left') {
-      // Progress starts on the day the counter was created.
-      return { ...base, targetDate, repeat, startDate: initial?.startDate ?? today() };
+    switch (type) {
+      case 'days_left':
+        // Progress starts on the day the counter was created.
+        return { ...base, type, targetDate, repeat, startDate: countdown?.startDate ?? today() };
+      case 'days_passed':
+        return { ...base, type, startDate };
+      case 'goal_progress': {
+        const start = parseNumber(initialValue) ?? 0;
+        const current = initial ? parseNumber(currentValue) : start;
+        return { ...base, type, initialValue: start, currentValue: current ?? start, targetValue: parseNumber(targetValue) ?? start };
+      }
     }
-    if (type === 'days_passed') return { ...base, startDate };
-    const start = parseNumber(initialValue);
-    const target = parseNumber(targetValue);
-    if (start === undefined || target === undefined) return t.errorValues;
-    if (start === target) return t.errorSameValues;
-    const current = initial ? parseNumber(currentValue) : start;
-    if (current === undefined) return t.errorCurrent;
-    return { ...base, initialValue: start, currentValue: current, targetValue: target };
   }
 
-  const built = buildItem();
-  const preview: CounterItem = {
-    id: 'preview',
-    title: title.trim() || t.types[type].placeholder,
-    emoji,
-    type,
-    color,
-    startDate,
-    targetDate,
-    repeat,
-    initialValue: parseNumber(initialValue),
-    currentValue: parseNumber(initial ? currentValue : initialValue),
-    targetValue: parseNumber(targetValue),
-  };
+  /** The error text for the form, or '' if the user can save it. */
+  function validate(item: NewCounter): string {
+    if (!item.title) return t.errorName;
+    if (item.reminder === 'custom' && !isFutureCustomReminder(item)) return t.errorReminderPast;
+    if (item.type !== 'goal_progress') return '';
+    if (parseNumber(initialValue) === undefined || parseNumber(targetValue) === undefined) return t.errorValues;
+    if (item.initialValue === item.targetValue) return t.errorSameValues;
+    if (initial && parseNumber(currentValue) === undefined) return t.errorCurrent;
+    return '';
+  }
+
+  const draft = buildDraft();
+  const preview: CounterItem = { ...draft, id: 'preview', title: draft.title || t.types[type].placeholder };
 
   async function save() {
-    if (typeof built === 'string') {
-      setError(built);
+    const problem = validate(draft);
+    if (problem) {
+      setError(problem);
       return;
     }
     setSaving(true);
     try {
-      if (initial) await updateCounter(initial.id, built);
-      else await addCounter(built);
+      if (initial) await updateCounter({ ...draft, id: initial.id });
+      else await addCounter(draft);
       router.back();
     } catch (e) {
       console.warn('Counter save failed', e);
+      setError(t.errorSave);
       setSaving(false);
     }
   }

@@ -2,15 +2,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  countWeekends, getCounterBreakdown, getCounterDetails, getCounterStats, getEventWindow, getNextReminder, getReminderOptions,
+  countWeekends, getCounterBreakdown, getCounterDetails, getCounterStats, getEventWindow, getNextReminder, getNextReminders, getReminderOptions,
   getYearProgress, groupCounters, isValidDate, isValidTime, parseNumber,
 } from './counter.ts';
 import { resolveLanguage, STRINGS, ukPlural } from '../i18n/strings.ts';
-import { isCounter, type CounterItem } from '../models/counter.ts';
+import {
+  applyReminderHour, toCounter, type CountdownCounter, type CounterItem, type GoalCounter, type SinceCounter,
+} from '../models/counter.ts';
 import { DEFAULT_SETTINGS, sanitizeSettings } from '../models/settings.ts';
 
 const { en, uk, fr } = STRINGS;
-const base: CounterItem = { id: '1', title: 't', emoji: '⭐', type: 'days_left', color: 'peach' };
+const common = { id: '1', title: 't', emoji: '⭐', color: 'peach' };
+const base: CountdownCounter = { ...common, type: 'days_left', targetDate: '2026-01-01', repeat: 'none', startDate: '2025-01-01' };
+const since: SinceCounter = { ...common, type: 'days_passed', startDate: '2025-01-01' };
+const goal: GoalCounter = { ...common, type: 'goal_progress', initialValue: 88, currentValue: 88, targetValue: 80 };
 const DAYS: [string, string, string] = ['день', 'дні', 'днів'];
 
 test('ukPlural uses Ukrainian forms', () => {
@@ -51,26 +56,26 @@ test('days_left on the target day and after it', () => {
 });
 
 test('days_passed counts up from start date', () => {
-  const s = getCounterStats({ ...base, type: 'days_passed', startDate: '2025-01-01' }, uk, '2025-01-02');
+  const s = getCounterStats(since, uk, '2025-01-02');
   assert.equal(s.value, '1');
   assert.equal(s.label, 'день минув');
 });
 
 test('goal_progress works for a decreasing goal (weight 88 -> 80)', () => {
-  const item: CounterItem = { ...base, type: 'goal_progress', initialValue: 88, currentValue: 84, targetValue: 80 };
+  const item: CounterItem = { ...goal, currentValue: 84 };
   assert.equal(getCounterStats(item, en).value, '50%');
   assert.equal(getCounterDetails(item, en), '88 → 80 · now 84');
 });
 
 test('goal_progress clamps at 100% for an increasing goal', () => {
-  const item: CounterItem = { ...base, type: 'goal_progress', initialValue: 0, currentValue: 150, targetValue: 100 };
+  const item: CounterItem = { ...goal, initialValue: 0, currentValue: 150, targetValue: 100 };
   const s = getCounterStats(item, fr);
   assert.equal(s.value, '100\u00A0%');
   assert.equal(s.label, 'objectif atteint');
 });
 
 test('goal_progress with missing values shows 0% and no details', () => {
-  const item: CounterItem = { ...base, type: 'goal_progress', initialValue: 88 };
+  const item = toCounter({ ...common, type: 'goal_progress', initialValue: 88 }, '2026-01-01')!;
   assert.equal(getCounterStats(item, en).value, '0%');
   assert.equal(getCounterDetails(item, en), '');
 });
@@ -108,7 +113,7 @@ test('isValidDate and parseNumber', () => {
 });
 
 test('yearly repeat moves to the next date and starts the period at the previous one', () => {
-  const birthday: CounterItem = { ...base, targetDate: '2020-03-10', repeat: 'yearly' };
+  const birthday: CountdownCounter = { ...base, targetDate: '2020-03-10', repeat: 'yearly' };
   assert.deepEqual(getEventWindow(birthday, '2026-03-11'), { start: '2026-03-10', target: '2027-03-10' });
   assert.deepEqual(getEventWindow(birthday, '2026-03-10'), { start: '2025-03-10', target: '2026-03-10' });
   assert.equal(getCounterStats(birthday, en, '2026-03-10').label, 'today');
@@ -116,7 +121,7 @@ test('yearly repeat moves to the next date and starts the period at the previous
 });
 
 test('monthly repeat keeps the end of the month', () => {
-  const rent: CounterItem = { ...base, targetDate: '2026-01-31', repeat: 'monthly' };
+  const rent: CountdownCounter = { ...base, targetDate: '2026-01-31', repeat: 'monthly' };
   assert.equal(getEventWindow(rent, '2026-02-15').target, '2026-02-28');
   assert.equal(getEventWindow(rent, '2026-03-01').target, '2026-03-31');
 });
@@ -152,10 +157,10 @@ test('getCounterBreakdown for a countdown', () => {
 test('groupCounters sorts upcoming events by date', () => {
   const items: CounterItem[] = [
     { ...base, id: 'far', targetDate: '2026-12-01' },
-    { ...base, id: 'goal', type: 'goal_progress', initialValue: 1, targetValue: 2 },
+    { ...goal, id: 'goal' },
     { ...base, id: 'near', targetDate: '2026-11-20' },
     { ...base, id: 'old', targetDate: '2026-01-01' },
-    { ...base, id: 'habit', type: 'days_passed', startDate: '2026-01-01' },
+    { ...since, id: 'habit' },
   ];
   const groups = groupCounters(items, '2026-11-17');
   assert.deepEqual(
@@ -164,14 +169,42 @@ test('groupCounters sorts upcoming events by date', () => {
   );
 });
 
-test('isCounter keeps valid counters and drops damaged ones', () => {
-  assert.equal(isCounter(base), true);
-  assert.equal(isCounter({ ...base, type: 'goal_progress' }), true);
-  assert.equal(isCounter({ ...base, type: 'unknown' }), false);
-  assert.equal(isCounter({ ...base, id: 1 }), false);
-  assert.equal(isCounter({ ...base, title: undefined }), false);
-  assert.equal(isCounter(null), false);
-  assert.equal(isCounter('text'), false);
+test('toCounter keeps valid counters and drops data that is not a counter', () => {
+  const now = '2026-11-17';
+  assert.deepEqual(toCounter(base, now), base);
+  assert.deepEqual(toCounter(since, now), since);
+  assert.deepEqual(toCounter(goal, now), goal);
+  assert.equal(toCounter({ ...base, type: 'unknown' }, now), undefined);
+  assert.equal(toCounter({ ...base, id: 1 }, now), undefined);
+  assert.equal(toCounter({ ...base, title: undefined }, now), undefined);
+  assert.equal(toCounter(null, now), undefined);
+  assert.equal(toCounter('text', now), undefined);
+});
+
+test('toCounter repairs missing fields with the old defaults', () => {
+  const now = '2026-11-17';
+  // Counters of version 1.0 had no repeat and could have no start date.
+  assert.deepEqual(toCounter({ ...common, type: 'days_left', targetDate: '2026-12-01' }, now), {
+    ...common, type: 'days_left', targetDate: '2026-12-01', repeat: 'none', startDate: now,
+  });
+  assert.equal((toCounter({ ...since, startDate: 5 }, now) as SinceCounter).startDate, now);
+  // Without a current value, the goal starts at the start value.
+  assert.equal((toCounter({ ...goal, currentValue: undefined }, now) as GoalCounter).currentValue, 88);
+  assert.equal(toCounter({ ...base, emoji: undefined, reminder: 'soon' }, now)?.emoji, '✈️');
+  assert.equal(toCounter({ ...base, reminder: 'soon' }, now)?.reminder, undefined);
+});
+
+test('applyReminderHour copies the old reminder hour only to counters without their own time', () => {
+  const items: CounterItem[] = [
+    { ...base, id: 'a', reminder: 'on_day' },
+    { ...since, id: 'b', reminder: 'custom', reminderTime: '18:30' },
+    { ...goal, id: 'c' },
+  ];
+  assert.deepEqual(
+    applyReminderHour(items, 7).map((c) => c.reminderTime),
+    ['07:00', '18:30', undefined],
+  );
+  assert.equal(applyReminderHour(items, 20)[0].reminderTime, '20:00');
 });
 
 test('sanitizeSettings keeps valid values and replaces damaged ones', () => {
@@ -212,19 +245,31 @@ test('getNextReminder skips a passed reminder, or moves it to the next date of a
   assert.equal(getNextReminder({ ...birthday, repeat: 'none' }, en, now), undefined);
 });
 
+test('getNextReminders schedules some dates ahead only for a repeating countdown', () => {
+  const now = new Date(2026, 10, 17, 12);
+  const monthly = { ...base, targetDate: '2026-01-31', repeat: 'monthly' as const, reminder: 'on_day' as const };
+  assert.deepEqual(
+    getNextReminders(monthly, en, 3, now).map((r) => r.date),
+    // The end of the month stays on the last day.
+    [new Date(2026, 10, 30, 9), new Date(2026, 11, 31, 9), new Date(2027, 0, 31, 9)],
+  );
+  assert.equal(getNextReminders({ ...monthly, repeat: 'none', targetDate: '2026-11-30' }, en, 3, now).length, 1);
+  assert.deepEqual(getNextReminders({ ...monthly, reminder: 'none' }, en, 3, now), []);
+});
+
 test('a custom reminder works for all counter types, once', () => {
   const now = new Date(2026, 10, 17, 12);
   const custom = { reminder: 'custom' as const, reminderDate: '2026-11-20', reminderTime: '18:30' };
   const date = new Date(2026, 10, 20, 18, 30);
   assert.deepEqual(getNextReminder({ ...base, ...custom, targetDate: '2026-11-27' }, en, now), { date, body: 'In 7 days' });
-  assert.deepEqual(getNextReminder({ ...base, ...custom, type: 'days_passed', startDate: '2026-11-10' }, en, now), {
+  assert.deepEqual(getNextReminder({ ...since, ...custom, startDate: '2026-11-10' }, en, now), {
     date,
     body: '10 days passed',
   });
-  const goal = { ...base, ...custom, type: 'goal_progress' as const, initialValue: 88, targetValue: 80 };
-  assert.deepEqual(getNextReminder(goal, en, now), { date, body: 'Time to update your progress.' });
+  const goalReminder = { ...goal, ...custom };
+  assert.deepEqual(getNextReminder(goalReminder, en, now), { date, body: 'Time to update your progress.' });
   // A passed date does not send a reminder.
-  assert.equal(getNextReminder({ ...goal, reminderDate: '2026-11-17', reminderTime: '11:59' }, en, now), undefined);
+  assert.equal(getNextReminder({ ...goalReminder, reminderDate: '2026-11-17', reminderTime: '11:59' }, en, now), undefined);
   // A repeating countdown ignores a custom date.
   assert.equal(getNextReminder({ ...base, ...custom, targetDate: '2026-11-27', repeat: 'yearly' }, en, now), undefined);
 });

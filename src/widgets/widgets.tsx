@@ -2,7 +2,7 @@ import { FlexWidget, OverlapWidget, SvgWidget, TextWidget, type ColorProp } from
 import type { Strings } from '../i18n/strings';
 import type { CounterItem } from '../models/counter';
 import type { ThemeColors } from '../theme/colors';
-import { getCounterStats, getYearProgress } from '../utils/counter';
+import { getCounterStats, getYearProgress, statsText } from '../utils/counter';
 
 // Widget colors must be hex strings. Our theme colors already are.
 const c = (color: string) => color as ColorProp;
@@ -151,7 +151,7 @@ export function CounterWidget({ item, colors, t, width, height, background, link
   const action = {
     clickAction: 'OPEN_URI',
     clickActionData: { uri: link },
-    accessibilityLabel: `${item.title}: ${stats.value} ${stats.label}`,
+    accessibilityLabel: `${item.title}: ${statsText(stats)}`,
   } as const;
 
   // The widget renderer does not support fragments, so each layout has its own root.

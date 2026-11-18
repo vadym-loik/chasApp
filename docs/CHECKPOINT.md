@@ -4,7 +4,7 @@
 
 - Latest release: **v1.3.0** (versionCode 4), Android APK on GitHub Releases. The release workflow built it.
 - All work is committed and pushed to `main`.
-- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (25 tests), `npx expo-doctor` (20/20).
+- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (29 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
 
 ## Releases
@@ -33,8 +33,10 @@
 ## Where the code is
 
 - `src/app/`: screens (Expo Router). `index` home, `[id]` details, `edit` form, `settings`.
-- `src/utils/counter.ts`: all date and counter logic, with tests in `counter.test.ts`. Reminder dates: `getNextReminder()`.
-- `src/services/storage.ts`: AsyncStorage. Each save updates the widgets and the reminders.
+- `src/models/counter.ts`: one type for each counter type (`CountdownCounter`, `SinceCounter`, `GoalCounter`).
+  `toCounter()` reads saved data and fills missing fields with defaults, so old counters do not get lost.
+- `src/utils/counter.ts`: all date and counter logic, with tests in `counter.test.ts`. Reminder dates: `getNextReminders()`.
+- `src/services/storage.ts`: AsyncStorage. Each save updates the widgets and the reminders. All changes run in one queue.
   `migrateReminderHour()` moves the 1.2.0 global reminder hour to the counters.
 - `src/services/reminders.ts`: schedules notifications. It cancels all and schedules again after each change (one queue).
 - `src/widgets/`: Android widgets. The widget renderer does not support React fragments (`<>`).
@@ -95,11 +97,10 @@ These parts pass the checks, but nobody has used them on a device yet:
 - `npm audit`: build-time issues in `picomatch` and `minimatch` (not in the APK). Update with the next Expo SDK.
 - iOS: needs a Mac or EAS Build, and an Apple Developer account to install on an iPhone. Reminders are Android only.
 - Reminders use inexact alarms (no `SCHEDULE_EXACT_ALARM`). Android can deliver them some minutes late.
-- Repeating countdowns schedule their next reminder when the app opens or a counter changes.
-  If the user does not open the app for a full period, the next reminder does not come.
+- Repeating countdowns schedule their next 3 reminders when the app opens or a counter changes.
+  If the user does not open the app for 3 full periods, the next reminder does not come.
 - A custom reminder comes only once. There is no repeating reminder (for example, each week for a goal).
 - Swipe actions have no screen reader support. The details screen still has edit and delete.
-- Home screen on Android: the list scrolls under the status bar, so the clock covers the content. Not fixed yet.
 
 ## Ideas for next time
 

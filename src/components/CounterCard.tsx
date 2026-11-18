@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CounterItem } from '../models/counter';
 import { useApp } from '../AppProvider';
-import { getCounterDetails, getCounterStats } from '../utils/counter';
+import { getCounterDetails, getCounterStats, statsText } from '../utils/counter';
 import { ProgressBar } from './ProgressBar';
 
 interface Props {
@@ -17,7 +17,7 @@ export function CounterCard({ item, onPress }: Props) {
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${item.title}: ${stats.value} ${stats.label}`}
+      accessibilityLabel={`${item.title}: ${statsText(stats)}`}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: cardColor(item.color), transform: [{ scale: pressed ? 0.98 : 1 }] },

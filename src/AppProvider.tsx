@@ -2,7 +2,7 @@ import { useLocales } from 'expo-localization';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import { resolveLanguage, STRINGS, type Language, type Strings } from './i18n/strings';
-import type { Settings } from './models/settings';
+import { DEFAULT_SETTINGS, type Settings } from './models/settings';
 import { getSettings, saveSettings } from './services/storage';
 import { cardColor, getThemeColors, type Scheme, type ThemeColors } from './theme/colors';
 
@@ -25,7 +25,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettingsState] = useState<Settings | null>(null);
 
   useEffect(() => {
-    getSettings().then(setSettingsState);
+    // If the storage fails, start with the defaults. A blank screen would block the user.
+    getSettings()
+      .catch((error: unknown) => {
+        console.warn('Settings load failed', error);
+        return DEFAULT_SETTINGS;
+      })
+      .then(setSettingsState);
   }, []);
 
   const value = useMemo<AppContextValue | null>(() => {
@@ -38,7 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSettings: (changes) => {
         const next = { ...settings, ...changes };
         setSettingsState(next);
-        saveSettings(next);
+        saveSettings(next).catch((error: unknown) => console.warn('Settings save failed', error));
       },
       scheme,
       colors: getThemeColors(scheme, settings.accent),

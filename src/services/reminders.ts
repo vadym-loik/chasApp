@@ -1,17 +1,19 @@
-import { getLocales } from 'expo-localization';
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { resolveLanguage, STRINGS, type Strings } from '../i18n/strings';
-import { getNextReminder } from '../utils/counter';
+import { getStrings } from '../i18n/deviceStrings';
+import type { Strings } from '../i18n/strings';
+import { getNextReminders } from '../utils/counter';
 import { getCounters, getSettings, migrateReminderHour } from './storage';
 
 // Reminders are for Android only for now.
 export const remindersAvailable = Platform.OS === 'android';
 
 const CHANNEL_ID = 'reminders';
+// Reminders scheduled ahead for each repeating countdown. Android allows 500 alarms for each app.
+const REMINDERS_AHEAD = 3;
 
 if (remindersAvailable) {
   // Show reminders also when the app is open.
@@ -43,27 +45,27 @@ export async function requestReminderPermission(t: Strings): Promise<boolean> {
 
 /**
  * Schedules the next reminder of each countdown again, with the saved settings.
- * Call it after counters or settings change, and when the app starts (repeating events move to the next date).
+ * Call it after counters or settings change, and when the app starts (repeating events move to the next dates).
  */
 async function syncReminders(): Promise<void> {
   if (!remindersAvailable) return;
   const [items, settings] = await Promise.all([getCounters(), getSettings()]);
-  const t = STRINGS[resolveLanguage(settings.language, getLocales()[0]?.languageCode)];
+  const t = getStrings(settings);
   await Notifications.cancelAllScheduledNotificationsAsync();
   if (!(await Notifications.getPermissionsAsync()).granted) return;
   await createChannel(t);
   for (const item of items) {
-    const reminder = getNextReminder(item, t);
-    if (!reminder) continue;
-    await Notifications.scheduleNotificationAsync({
-      identifier: item.id,
-      content: {
-        title: `${item.emoji} ${item.title}`,
-        body: reminder.body,
-        data: { url: `/${item.id}` },
-      },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.date, channelId: CHANNEL_ID },
-    });
+    for (const [index, reminder] of getNextReminders(item, t, REMINDERS_AHEAD).entries()) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${item.id}:${index}`,
+        content: {
+          title: `${item.emoji} ${item.title}`,
+          body: reminder.body,
+          data: { url: `/${item.id}` },
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.date, channelId: CHANNEL_ID },
+      });
+    }
   }
 }
 

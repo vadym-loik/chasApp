@@ -7,12 +7,11 @@ import { Labeled } from '../components/Field';
 import { OptionRow } from '../components/OptionRow';
 import { Segmented } from '../components/Segmented';
 import { LANGUAGES } from '../i18n/strings';
-import type { ThemeMode } from '../models/settings';
+import { THEME_MODES } from '../models/settings';
 import { ACCENT_KEYS, ACCENTS } from '../theme/colors';
 import { pinWidget, WIDGET_NAMES, widgetsAvailable } from '../widgets';
 
 const DONATE_URL = 'https://buymeacoffee.com/vadymloik';
-const MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
 export default function SettingsScreen() {
   const { colors, settings, setSettings, t } = useApp();
@@ -46,7 +45,7 @@ export default function SettingsScreen() {
 
       <Labeled label={t.theme}>
         <Segmented
-          options={MODES.map((key) => ({ key, label: t.themeModes[key] }))}
+          options={THEME_MODES.map((key) => ({ key, label: t.themeModes[key] }))}
           selected={settings.mode}
           onSelect={(mode) => setSettings({ mode })}
         />

@@ -8,7 +8,7 @@ import { Button } from '../components/Button';
 import { OptionRow } from '../components/OptionRow';
 import type { CounterItem } from '../models/counter';
 import { getCounters, getWidgetCounterId, setWidgetCounterId } from '../services/storage';
-import { getCounterStats } from '../utils/counter';
+import { getCounterStats, statsText } from '../utils/counter';
 import { renderWidget } from './render';
 
 /** Android opens this screen when the user adds or reconfigures the counter widget. */
@@ -45,19 +45,16 @@ function ChooseCounter({ widgetInfo, renderWidget: draw, setResult }: WidgetConf
       <Text style={[styles.title, { color: colors.text }]}>{t.widgetChooseCounter}</Text>
       <ScrollView contentContainerStyle={styles.list}>
         {items?.length === 0 && <Text style={[styles.empty, { color: colors.muted }]}>{t.widgetNoCounters}</Text>}
-        {items?.map((item) => {
-          const stats = getCounterStats(item, t);
-          return (
-            <OptionRow
-              key={item.id}
-              emoji={item.emoji}
-              title={item.title}
-              description={`${stats.value} ${stats.label}`}
-              active={item.id === selected}
-              onPress={() => choose(item.id)}
-            />
-          );
-        })}
+        {items?.map((item) => (
+          <OptionRow
+            key={item.id}
+            emoji={item.emoji}
+            title={item.title}
+            description={statsText(getCounterStats(item, t))}
+            active={item.id === selected}
+            onPress={() => choose(item.id)}
+          />
+        ))}
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button title={t.cancel} variant="secondary" onPress={() => setResult('cancel')} />

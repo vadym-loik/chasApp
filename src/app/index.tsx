@@ -67,6 +67,8 @@ export default function HomeScreen() {
         )}
         ListEmptyComponent={items ? <EmptyState /> : undefined}
       />
+      {/* The status bar is see-through, so this bar keeps the list from scrolling under the clock. */}
+      <View style={[styles.statusBar, { height: insets.top, backgroundColor: colors.background }]} />
       {items && items.length > 0 && (
         <Pressable
           onPress={openCreate}
@@ -116,6 +118,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   item: { marginBottom: 12 },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0 },
   fab: {
     position: 'absolute',
     right: 20,

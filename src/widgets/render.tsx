@@ -1,8 +1,7 @@
 import * as Linking from 'expo-linking';
-import { getLocales } from 'expo-localization';
 import type { ReactElement } from 'react';
 import { requestWidgetUpdate, type WidgetInfo, type WidgetRepresentation } from 'react-native-android-widget';
-import { resolveLanguage, STRINGS } from '../i18n/strings';
+import { getStrings } from '../i18n/deviceStrings';
 import { getCounters, getSettings, getWidgetCounterId } from '../services/storage';
 import { cardColor, getThemeColors, type Scheme } from '../theme/colors';
 import { groupCounters, today } from '../utils/counter';
@@ -12,7 +11,7 @@ import { CounterWidget, YearWidget } from './widgets';
 /** Builds a widget with the saved settings. With the system theme, Android gets a light and a dark version. */
 export async function renderWidget(info: WidgetInfo): Promise<WidgetRepresentation> {
   const settings = await getSettings();
-  const t = STRINGS[resolveLanguage(settings.language, getLocales()[0]?.languageCode)];
+  const t = getStrings(settings);
   const now = today();
   const size = { t, width: info.width, height: info.height, now };
 
