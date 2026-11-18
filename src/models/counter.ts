@@ -34,3 +34,15 @@ export const COUNTER_TYPE_EMOJI: Record<CounterType, string> = {
 };
 
 export const COUNTER_TYPE_KEYS = Object.keys(COUNTER_TYPE_EMOJI) as CounterType[];
+
+/** True if saved data is a counter that the app can show. An unknown type would break the screens. */
+export function isCounter(item: unknown): item is CounterItem {
+  const c = item as CounterItem;
+  return (
+    !!c &&
+    typeof c === 'object' &&
+    typeof c.id === 'string' &&
+    typeof c.title === 'string' &&
+    COUNTER_TYPE_KEYS.includes(c.type)
+  );
+}

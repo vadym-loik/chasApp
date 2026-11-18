@@ -68,6 +68,8 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
   const [currentValue, setCurrentValue] = useState(optionalText(initial?.currentValue));
   const [targetValue, setTargetValue] = useState(optionalText(initial?.targetValue));
   const [error, setError] = useState('');
+  // Blocks a second tap while the first save runs, so one tap makes one counter.
+  const [saving, setSaving] = useState(false);
 
   function chooseType(next: CounterType) {
     // Change the emoji only if the user did not pick one.
@@ -140,9 +142,15 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
       setError(built);
       return;
     }
-    if (initial) await updateCounter(initial.id, built);
-    else await addCounter(built);
-    router.back();
+    setSaving(true);
+    try {
+      if (initial) await updateCounter(initial.id, built);
+      else await addCounter(built);
+      router.back();
+    } catch (e) {
+      console.warn('Counter save failed', e);
+      setSaving(false);
+    }
   }
 
   return (
@@ -255,7 +263,7 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
         </Labeled>
 
         {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
-        <Button title={initial ? t.save : t.create} icon="check" onPress={save} />
+        <Button title={initial ? t.save : t.create} icon="check" onPress={save} disabled={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

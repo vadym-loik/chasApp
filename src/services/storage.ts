@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { CounterItem } from '../models/counter';
+import { isCounter, type CounterItem } from '../models/counter';
 import { sanitizeSettings, type Settings } from '../models/settings';
 import { updateWidgets } from '../widgets';
 import { updateReminders } from './reminders';
@@ -26,11 +26,6 @@ async function writeJSON(key: string, value: unknown): Promise<void> {
 export async function getCounters(): Promise<CounterItem[]> {
   const items = await readJSON(COUNTERS_KEY);
   return Array.isArray(items) ? items.filter(isCounter) : [];
-}
-
-function isCounter(item: unknown): item is CounterItem {
-  const c = item as CounterItem;
-  return !!c && typeof c.id === 'string' && typeof c.title === 'string' && typeof c.type === 'string';
 }
 
 export async function getCounter(id: string): Promise<CounterItem | undefined> {

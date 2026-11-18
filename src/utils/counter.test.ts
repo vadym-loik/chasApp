@@ -6,7 +6,7 @@ import {
   getYearProgress, groupCounters, isValidDate, isValidTime, parseNumber,
 } from './counter.ts';
 import { resolveLanguage, STRINGS, ukPlural } from '../i18n/strings.ts';
-import type { CounterItem } from '../models/counter.ts';
+import { isCounter, type CounterItem } from '../models/counter.ts';
 import { DEFAULT_SETTINGS, sanitizeSettings } from '../models/settings.ts';
 
 const { en, uk, fr } = STRINGS;
@@ -162,6 +162,16 @@ test('groupCounters sorts upcoming events by date', () => {
     groups.map((g) => [g.key, g.data.map((i) => i.id)]),
     [['upcoming', ['near', 'far']], ['since', ['habit']], ['goals', ['goal']], ['past', ['old']]],
   );
+});
+
+test('isCounter keeps valid counters and drops damaged ones', () => {
+  assert.equal(isCounter(base), true);
+  assert.equal(isCounter({ ...base, type: 'goal_progress' }), true);
+  assert.equal(isCounter({ ...base, type: 'unknown' }), false);
+  assert.equal(isCounter({ ...base, id: 1 }), false);
+  assert.equal(isCounter({ ...base, title: undefined }), false);
+  assert.equal(isCounter(null), false);
+  assert.equal(isCounter('text'), false);
 });
 
 test('sanitizeSettings keeps valid values and replaces damaged ones', () => {

@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { SwipeableCounterCard } from '../components/SwipeableCounterCard';
 import { YearCard } from '../components/YearCard';
+import { useReload } from '../hooks/useReload';
 import type { CounterItem } from '../models/counter';
 import { getCounters } from '../services/storage';
 import { groupCounters, today } from '../utils/counter';
@@ -24,8 +25,8 @@ export default function HomeScreen() {
     getCounters().then(setItems);
   }, []);
 
-  // Reload on focus, so new counters and a new day show up.
-  useFocusEffect(load);
+  // Reload on focus and on resume, so new counters and a new day show up.
+  useReload(load);
 
   return (
     <View style={styles.screen}>

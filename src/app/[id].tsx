@@ -1,4 +1,4 @@
-import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { Button } from '../components/Button';
 import { Field } from '../components/Field';
 import { HeaderButton } from '../components/HeaderButton';
 import { ProgressBar } from '../components/ProgressBar';
+import { useReload } from '../hooks/useReload';
 import type { CounterItem } from '../models/counter';
 import { getCounter, updateCounter } from '../services/storage';
 import { useApp } from '../AppProvider';
@@ -25,12 +26,8 @@ export default function DetailScreen() {
     setNewValue(c?.currentValue === undefined ? '' : String(c.currentValue));
   }, [id]);
 
-  // Reload when the user comes back from the edit screen.
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  // Reload when the user comes back from the edit screen, or to the app on a new day.
+  useReload(load);
 
   if (item === undefined) return null;
   if (item === null) {

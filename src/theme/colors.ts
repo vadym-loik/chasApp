@@ -1,11 +1,12 @@
 export type Scheme = 'light' | 'dark';
 
+// Buttons show white text on the accent, so each accent has a contrast of at least 4.5:1 with white (WCAG AA).
 export const ACCENTS = {
-  coral: '#EE5D3F',
+  coral: '#C94F35',
   indigo: '#5B5FE0',
-  teal: '#0F9D8A',
-  amber: '#D98E04',
-  rose: '#E04F7D',
+  teal: '#0D8575',
+  amber: '#A36A03',
+  rose: '#CA4770',
   violet: '#8B55D6',
 };
 export type AccentKey = keyof typeof ACCENTS;
