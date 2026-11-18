@@ -19,6 +19,19 @@
 
 ## Build and release (Android)
 
+### With GitHub Actions
+
+- `.github/workflows/ci.yml`: typecheck, lint and tests on each push to `main` and each pull request.
+- `.github/workflows/release.yml`: on a tag `vX.Y.Z`, builds and signs the APK and creates a **draft** release.
+  Edit the notes, then publish. The tag must match `expo.version` in `app.json`.
+- The secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS` are in the GitHub
+  environment `release`. It accepts only `v*` tags. To run the workflow by hand, choose a tag, not `main`.
+- The actions are pinned to commit hashes.
+
+Steps: raise the versions (step 1 below), commit, then `git tag -a vX.Y.Z -m "Chas X.Y.Z"` and `git push origin main vX.Y.Z`.
+
+### On this computer
+
 Tools on this computer (not global):
 
 - JDK 17: `mise where java@temurin-17`
@@ -48,4 +61,3 @@ Without this key, users cannot install updates over the old version.
 ## Ideas for next time
 
 - Calendar view, tags, pinned counters.
-- GitHub Actions to build the APK on each tag.

@@ -1,0 +1,90 @@
+# Builds the signed Android APK.
+# - Push a tag `vX.Y.Z`: the APK goes to a draft GitHub release. Edit the notes, then publish it.
+# - Run the workflow by hand (Actions → Release → Run workflow) and choose a tag: the APK is only a build artifact.
+#
+# The signing secrets are in the `release` environment (Settings → Environments → release).
+# The environment accepts only `v*` tags, so a branch or a pull request cannot read the key.
+#   ANDROID_KEYSTORE_BASE64    the release keystore, as base64
+#   ANDROID_KEYSTORE_PASSWORD  the keystore and key password
+#   ANDROID_KEY_ALIAS          the key alias
+#
+# Each action is pinned to a commit, so nobody can change its code later. Update the hash and the comment together.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(node -p "require('./app.json').expo.version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # The tag must match the app version, so the APK name and the release agree.
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match app.json version $version"
+            exit 1
+          fi
+
+      - name: Generate the native Android project
+        run: npx expo prebuild --platform android --clean
+        env:
+          CI: 1
+
+      - name: Build the release APK
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+
+      - name: Sign the APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          build_tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          apk="Chas-${{ steps.version.outputs.version }}.apk"
+          "$build_tools/apksigner" sign \
+            --ks "$RUNNER_TEMP/release.keystore" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
+            --out "$apk" android/app/build/outputs/apk/release/app-release.apk
+          "$build_tools/apksigner" verify "$apk"
+          rm "$RUNNER_TEMP/release.keystore"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Chas-${{ steps.version.outputs.version }}
+          path: Chas-${{ steps.version.outputs.version }}.apk
+
+      - name: Create a draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "Chas-${{ steps.version.outputs.version }}.apk" \
+            --draft --title "Chas ${{ steps.version.outputs.version }}" --generate-notes
