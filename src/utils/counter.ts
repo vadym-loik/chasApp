@@ -1,8 +1,11 @@
 import dayjs from 'dayjs';
 import type { Strings } from '../i18n/strings';
-import { REMINDER_DAYS, type CounterItem } from '../models/counter.ts';
+import {
+  DEFAULT_REMINDER_TIME, REMINDER_DAYS, REMINDERS, type CounterItem, type CounterType, type Reminder, type Repeat,
+} from '../models/counter.ts';
 
 export const DATE_FORMAT = 'YYYY-MM-DD';
+export const TIME_FORMAT = 'HH:mm';
 
 export interface CounterStats {
   value: string; // main text on the card: "12", "50%", "🎉"
@@ -20,6 +23,10 @@ export function addDays(date: string, n: number, unit: 'day' | 'week' | 'month' 
 
 export function isValidDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && dayjs(value).format(DATE_FORMAT) === value;
+}
+
+export function isValidTime(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
 export function parseNumber(text: string): number | undefined {
@@ -60,25 +67,61 @@ export function getEventWindow(item: CounterItem, now: string = today()): { star
   return { start: nth(k - 1), target: nth(k) };
 }
 
+/** The time of a reminder, from the saved date and time. */
+function reminderAt(day: string, time: string): Date {
+  return dayjs(`${day}T${time}`).toDate();
+}
+
 /**
- * The next reminder of a countdown, at `hour` o'clock, and the days from it to the event.
- * `undefined` if there is no reminder to send. When the reminder of a repeating event has passed,
- * it moves to the next event date.
+ * The reminder options for a counter. Only countdowns have reminders before the event.
+ * A repeating countdown has no custom date, because one date does not repeat.
+ */
+export function getReminderOptions(type: CounterType, repeat: Repeat = 'none'): Reminder[] {
+  if (type !== 'days_left') return ['none', 'custom'];
+  return repeat === 'none' ? REMINDERS : REMINDERS.filter((r) => r !== 'custom');
+}
+
+/** True if the custom reminder of the item is set and still in the future. */
+export function isFutureCustomReminder(item: Pick<CounterItem, 'reminderDate' | 'reminderTime'>, now: Date = new Date()): boolean {
+  return !!item.reminderDate && reminderAt(item.reminderDate, item.reminderTime ?? DEFAULT_REMINDER_TIME) > now;
+}
+
+/** The text of a reminder on `day`: "In 7 days", "12 days passed", "Time to update your progress." */
+function reminderBody(item: CounterItem, t: Strings, day: string): string {
+  if (item.type === 'goal_progress') return t.goalReminder;
+  if (item.type === 'days_left') {
+    const left = daysBetween(day, getEventWindow(item, day).target);
+    if (left >= 0) return t.reminderBody(left);
+  }
+  const stats = getCounterStats(item, t, day);
+  return `${stats.value} ${stats.label}`;
+}
+
+/**
+ * The next reminder of a counter and its text. `undefined` if there is no reminder to send.
+ * When the reminder of a repeating countdown has passed, it moves to the next event date.
  */
 export function getNextReminder(
   item: CounterItem,
-  hour: number,
+  t: Strings,
   now: Date = new Date(),
-): { date: Date; days: number } | undefined {
-  if (item.type !== 'days_left' || !item.reminder || item.reminder === 'none') return undefined;
-  const days = REMINDER_DAYS[item.reminder];
-  const remindAt = (target: string) => dayjs(target).subtract(days, 'day').hour(hour).startOf('hour').toDate();
-  const { target } = getEventWindow(item, dayjs(now).format(DATE_FORMAT));
-  let date = remindAt(target);
-  if (date <= now && (item.repeat ?? 'none') !== 'none') {
-    date = remindAt(getEventWindow(item, addDays(target, 1)).target);
+): { date: Date; body: string } | undefined {
+  const reminder = item.reminder ?? 'none';
+  if (reminder === 'none' || !getReminderOptions(item.type, item.repeat).includes(reminder)) return undefined;
+  const time = item.reminderTime ?? DEFAULT_REMINDER_TIME;
+
+  if (reminder === 'custom') {
+    if (!item.reminderDate || !isFutureCustomReminder(item, now)) return undefined;
+    return { date: reminderAt(item.reminderDate, time), body: reminderBody(item, t, item.reminderDate) };
   }
-  return date > now ? { date, days } : undefined;
+
+  const remindDay = (target: string) => addDays(target, -REMINDER_DAYS[reminder]);
+  let day = remindDay(getEventWindow(item, dayjs(now).format(DATE_FORMAT)).target);
+  if (reminderAt(day, time) <= now && (item.repeat ?? 'none') !== 'none') {
+    day = remindDay(getEventWindow(item, addDays(day, REMINDER_DAYS[reminder] + 1)).target);
+  }
+  const date = reminderAt(day, time);
+  return date > now ? { date, body: reminderBody(item, t, day) } : undefined;
 }
 
 export function getCounterStats(item: CounterItem, t: Strings, now: string = today()): CounterStats {

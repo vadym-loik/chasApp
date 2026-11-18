@@ -50,9 +50,17 @@ const en = {
   repeats: { none: 'Never', monthly: 'Every month', yearly: 'Every year' } as Record<Repeat, string>,
   quickDates: { tomorrow: 'Tomorrow', week: 'In a week', month: 'In a month', year: 'In a year' },
   reminder: 'Reminder',
-  reminders: { none: 'Off', on_day: 'On the day', day_before: '1 day before', week_before: '1 week before' } as Record<Reminder, string>,
+  reminders: {
+    none: 'Off', on_day: 'On the day', day_before: '1 day before', week_before: '1 week before', custom: 'Choose a date',
+  } as Record<Reminder, string>,
+  reminderDate: 'Reminder date',
   reminderTime: 'Reminder time',
-  formatHour: (h: number) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`,
+  formatTime: (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+  },
+  goalReminder: 'Time to update your progress.',
+  errorReminderPast: 'Choose a reminder date and time in the future.',
   reminderBody: (days: number) => (days === 0 ? 'Today is the day! 🎉' : `In ${days} ${enPlural(days, 'day', 'days')}`),
   notificationsOff: 'Notifications are off for Chas. Turn them on in the phone settings to get reminders.',
 
@@ -144,9 +152,12 @@ const uk: Strings = {
   repeats: { none: 'Ніколи', monthly: 'Щомісяця', yearly: 'Щороку' },
   quickDates: { tomorrow: 'Завтра', week: 'Через тиждень', month: 'Через місяць', year: 'Через рік' },
   reminder: 'Нагадування',
-  reminders: { none: 'Вимкнено', on_day: 'У день події', day_before: 'За 1 день', week_before: 'За 1 тиждень' },
-  reminderTime: 'Час нагадувань',
-  formatHour: (h) => `${String(h).padStart(2, '0')}:00`,
+  reminders: { none: 'Вимкнено', on_day: 'У день події', day_before: 'За 1 день', week_before: 'За 1 тиждень', custom: 'Вибрати дату' },
+  reminderDate: 'Дата нагадування',
+  reminderTime: 'Час нагадування',
+  formatTime: (time) => time,
+  goalReminder: 'Час оновити ваш прогрес.',
+  errorReminderPast: 'Виберіть дату і час нагадування в майбутньому.',
   reminderBody: (days) => (days === 0 ? 'Цей день настав! 🎉' : `Через ${days} ${ukPlural(days, ['день', 'дні', 'днів'])}`),
   notificationsOff: 'Сповіщення для Chas вимкнено. Увімкніть їх у налаштуваннях телефона, щоб отримувати нагадування.',
 
@@ -237,9 +248,14 @@ const fr: Strings = {
   repeats: { none: 'Jamais', monthly: 'Chaque mois', yearly: 'Chaque année' },
   quickDates: { tomorrow: 'Demain', week: 'Dans une semaine', month: 'Dans un mois', year: 'Dans un an' },
   reminder: 'Rappel',
-  reminders: { none: 'Désactivé', on_day: 'Le jour même', day_before: '1 jour avant', week_before: '1 semaine avant' },
-  reminderTime: 'Heure des rappels',
-  formatHour: (h) => `${String(h).padStart(2, '0')}:00`,
+  reminders: {
+    none: 'Désactivé', on_day: 'Le jour même', day_before: '1 jour avant', week_before: '1 semaine avant', custom: 'Choisir une date',
+  },
+  reminderDate: 'Date du rappel',
+  reminderTime: 'Heure du rappel',
+  formatTime: (time) => time,
+  goalReminder: 'C’est le moment de mettre à jour vos progrès.',
+  errorReminderPast: 'Choisissez une date et une heure de rappel dans le futur.',
   reminderBody: (days) => (days === 0 ? 'C’est le jour\u00A0! 🎉' : `Dans ${days} ${frPlural(days, 'jour', 'jours')}`),
   notificationsOff: 'Les notifications de Chas sont désactivées. Activez-les dans les réglages du téléphone pour recevoir les rappels.',
 

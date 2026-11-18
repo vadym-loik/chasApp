@@ -2,8 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  countWeekends, getCounterBreakdown, getCounterDetails, getCounterStats, getEventWindow, getNextReminder, getYearProgress,
-  groupCounters, isValidDate, parseNumber,
+  countWeekends, getCounterBreakdown, getCounterDetails, getCounterStats, getEventWindow, getNextReminder, getReminderOptions,
+  getYearProgress, groupCounters, isValidDate, isValidTime, parseNumber,
 } from './counter.ts';
 import { resolveLanguage, STRINGS, ukPlural } from '../i18n/strings.ts';
 import type { CounterItem } from '../models/counter.ts';
@@ -156,43 +156,75 @@ test('groupCounters sorts upcoming events by date', () => {
 
 test('sanitizeSettings keeps valid values and replaces damaged ones', () => {
   assert.deepEqual(
+    // Old fields, like the reminder hour of version 1.2.0, are dropped.
     sanitizeSettings({ mode: 'dark', accent: 'teal', language: 'fr', reminderHour: 20 }),
-    { mode: 'dark', accent: 'teal', language: 'fr', reminderHour: 20 },
+    { mode: 'dark', accent: 'teal', language: 'fr' },
   );
-  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de', reminderHour: 25 }), DEFAULT_SETTINGS);
+  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de' }), DEFAULT_SETTINGS);
   assert.deepEqual(sanitizeSettings(null), DEFAULT_SETTINGS);
   assert.deepEqual(sanitizeSettings('oops'), DEFAULT_SETTINGS);
 });
 
-test('getNextReminder sends the reminder before the event at the chosen hour', () => {
+test('getNextReminder sends the reminder before the event at the chosen time', () => {
   const now = new Date(2026, 10, 17, 12); // 17 November 2026, 12:00
   const event = { ...base, targetDate: '2026-11-30' };
-  assert.equal(getNextReminder(event, 9, now), undefined);
-  assert.equal(getNextReminder({ ...event, reminder: 'none' }, 9, now), undefined);
-  assert.deepEqual(getNextReminder({ ...event, reminder: 'week_before' }, 9, now), { date: new Date(2026, 10, 23, 9), days: 7 });
-  assert.deepEqual(getNextReminder({ ...event, reminder: 'on_day' }, 20, now), { date: new Date(2026, 10, 30, 20), days: 0 });
-  // Other counter types have no reminders.
-  assert.equal(getNextReminder({ ...base, type: 'days_passed', startDate: '2026-11-01', reminder: 'on_day' }, 9, now), undefined);
+  assert.equal(getNextReminder(event, en, now), undefined);
+  assert.equal(getNextReminder({ ...event, reminder: 'none' }, en, now), undefined);
+  assert.deepEqual(getNextReminder({ ...event, reminder: 'week_before' }, en, now), {
+    date: new Date(2026, 10, 23, 9), // the default time is 09:00
+    body: 'In 7 days',
+  });
+  assert.deepEqual(getNextReminder({ ...event, reminder: 'on_day', reminderTime: '20:45' }, en, now), {
+    date: new Date(2026, 10, 30, 20, 45),
+    body: 'Today is the day! 🎉',
+  });
 });
 
 test('getNextReminder skips a passed reminder, or moves it to the next date of a repeating event', () => {
   const now = new Date(2026, 10, 17, 12);
   const soon = { ...base, targetDate: '2026-11-20', reminder: 'week_before' as const };
-  assert.equal(getNextReminder(soon, 9, now), undefined);
-  assert.deepEqual(getNextReminder({ ...soon, repeat: 'monthly' }, 9, now), { date: new Date(2026, 11, 13, 9), days: 7 });
+  assert.equal(getNextReminder(soon, en, now), undefined);
+  assert.deepEqual(getNextReminder({ ...soon, repeat: 'monthly' }, en, now)?.date, new Date(2026, 11, 13, 9));
   // Today at 9:00 has passed, so the yearly reminder moves to next year.
   const birthday = { ...base, targetDate: '2000-11-17', repeat: 'yearly' as const, reminder: 'on_day' as const };
-  assert.deepEqual(getNextReminder(birthday, 9, now), { date: new Date(2027, 10, 17, 9), days: 0 });
-  assert.deepEqual(getNextReminder(birthday, 20, now), { date: new Date(2026, 10, 17, 20), days: 0 });
-  assert.equal(getNextReminder({ ...birthday, repeat: 'none' }, 9, now), undefined);
+  assert.deepEqual(getNextReminder(birthday, en, now)?.date, new Date(2027, 10, 17, 9));
+  assert.deepEqual(getNextReminder({ ...birthday, reminderTime: '20:00' }, en, now)?.date, new Date(2026, 10, 17, 20));
+  assert.equal(getNextReminder({ ...birthday, repeat: 'none' }, en, now), undefined);
 });
 
-test('reminder text', () => {
+test('a custom reminder works for all counter types, once', () => {
+  const now = new Date(2026, 10, 17, 12);
+  const custom = { reminder: 'custom' as const, reminderDate: '2026-11-20', reminderTime: '18:30' };
+  const date = new Date(2026, 10, 20, 18, 30);
+  assert.deepEqual(getNextReminder({ ...base, ...custom, targetDate: '2026-11-27' }, en, now), { date, body: 'In 7 days' });
+  assert.deepEqual(getNextReminder({ ...base, ...custom, type: 'days_passed', startDate: '2026-11-10' }, en, now), {
+    date,
+    body: '10 days passed',
+  });
+  const goal = { ...base, ...custom, type: 'goal_progress' as const, initialValue: 88, targetValue: 80 };
+  assert.deepEqual(getNextReminder(goal, en, now), { date, body: 'Time to update your progress.' });
+  // A passed date does not send a reminder.
+  assert.equal(getNextReminder({ ...goal, reminderDate: '2026-11-17', reminderTime: '11:59' }, en, now), undefined);
+  // A repeating countdown ignores a custom date.
+  assert.equal(getNextReminder({ ...base, ...custom, targetDate: '2026-11-27', repeat: 'yearly' }, en, now), undefined);
+});
+
+test('getReminderOptions', () => {
+  assert.deepEqual(getReminderOptions('days_left'), ['none', 'on_day', 'day_before', 'week_before', 'custom']);
+  assert.deepEqual(getReminderOptions('days_left', 'monthly'), ['none', 'on_day', 'day_before', 'week_before']);
+  assert.deepEqual(getReminderOptions('days_passed'), ['none', 'custom']);
+  assert.deepEqual(getReminderOptions('goal_progress'), ['none', 'custom']);
+});
+
+test('reminder text and time format', () => {
   assert.equal(en.reminderBody(1), 'In 1 day');
-  assert.equal(en.reminderBody(7), 'In 7 days');
   assert.equal(uk.reminderBody(7), 'Через 7 днів');
   assert.equal(fr.reminderBody(1), 'Dans 1 jour');
-  assert.equal(en.formatHour(20), '8 PM');
-  assert.equal(en.formatHour(12), '12 PM');
-  assert.equal(uk.formatHour(8), '08:00');
+  assert.equal(en.formatTime('20:05'), '8:05 PM');
+  assert.equal(en.formatTime('12:00'), '12:00 PM');
+  assert.equal(en.formatTime('00:30'), '12:30 AM');
+  assert.equal(uk.formatTime('08:00'), '08:00');
+  assert.ok(isValidTime('23:59'));
+  assert.ok(!isValidTime('24:00'));
+  assert.ok(!isValidTime('9:00'));
 });

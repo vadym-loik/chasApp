@@ -15,7 +15,8 @@
 - Android widgets: Year, and Counter (the user chooses the counter).
 - Swipe a counter card: right to edit, left to delete.
 - Wide widgets put the text beside the ring or the number.
-- Android reminders for countdowns (`expo-notifications`): on the day, 1 day or 1 week before, at an hour from Settings.
+- Android reminders (`expo-notifications`). Countdowns: on the day, 1 day or 1 week before. All counters: one custom date
+  (not for repeating countdowns). Each counter has its own time. The 1.2.0 global hour moves to the counters at start.
 - 12 card colors.
 
 ## Build and release (Android)

@@ -59,6 +59,20 @@ export async function deleteCounter(id: string): Promise<void> {
   await saveCounters((await getCounters()).filter((c) => c.id !== id));
 }
 
+/**
+ * Version 1.2.0 had one reminder hour for all counters, in the settings.
+ * Now each counter has its own time. This copies the old hour to the counters once, then removes it.
+ */
+export async function migrateReminderHour(): Promise<void> {
+  const raw = await readJSON(SETTINGS_KEY);
+  const hour = (raw as { reminderHour?: unknown } | undefined)?.reminderHour;
+  if (typeof hour !== 'number') return;
+  const time = `${String(hour).padStart(2, '0')}:00`;
+  const items = await getCounters();
+  await writeJSON(COUNTERS_KEY, items.map((c) => (c.reminder && !c.reminderTime ? { ...c, reminderTime: time } : c)));
+  await writeJSON(SETTINGS_KEY, sanitizeSettings(raw));
+}
+
 export async function getSettings(): Promise<Settings> {
   return sanitizeSettings(await readJSON(SETTINGS_KEY));
 }

@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { resolveLanguage, STRINGS, type Strings } from '../i18n/strings';
 import { getNextReminder } from '../utils/counter';
-import { getCounters, getSettings } from './storage';
+import { getCounters, getSettings, migrateReminderHour } from './storage';
 
 // Reminders are for Android only for now.
 export const remindersAvailable = Platform.OS === 'android';
@@ -53,13 +53,13 @@ async function syncReminders(): Promise<void> {
   if (!(await Notifications.getPermissionsAsync()).granted) return;
   await createChannel(t);
   for (const item of items) {
-    const reminder = getNextReminder(item, settings.reminderHour);
+    const reminder = getNextReminder(item, t);
     if (!reminder) continue;
     await Notifications.scheduleNotificationAsync({
       identifier: item.id,
       content: {
         title: `${item.emoji} ${item.title}`,
-        body: t.reminderBody(reminder.days),
+        body: reminder.body,
         data: { url: `/${item.id}` },
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.date, channelId: CHANNEL_ID },
@@ -71,7 +71,7 @@ async function syncReminders(): Promise<void> {
 export function useReminders(): void {
   useEffect(() => {
     if (!remindersAvailable) return;
-    updateReminders();
+    migrateReminderHour().finally(updateReminders);
 
     function open(notification: Notifications.Notification) {
       const url = notification.request.content.data?.url;

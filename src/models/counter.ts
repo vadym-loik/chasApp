@@ -2,10 +2,13 @@ export type CounterType = 'days_left' | 'days_passed' | 'goal_progress';
 export type Repeat = 'none' | 'monthly' | 'yearly';
 export const REPEATS: Repeat[] = ['none', 'monthly', 'yearly'];
 
-/** When a countdown sends a notification: the number of days before the event. */
+/** Countdown reminders: the number of days before the event. */
 export const REMINDER_DAYS = { on_day: 0, day_before: 1, week_before: 7 } as const;
-export type Reminder = 'none' | keyof typeof REMINDER_DAYS;
-export const REMINDERS: Reminder[] = ['none', 'on_day', 'day_before', 'week_before'];
+export type DaysBeforeReminder = keyof typeof REMINDER_DAYS;
+/** 'custom' is one reminder at `reminderDate`. All counter types can use it, but not repeating countdowns. */
+export type Reminder = 'none' | DaysBeforeReminder | 'custom';
+export const REMINDERS: Reminder[] = ['none', 'on_day', 'day_before', 'week_before', 'custom'];
+export const DEFAULT_REMINDER_TIME = '09:00';
 
 export interface CounterItem {
   id: string;
@@ -14,7 +17,9 @@ export interface CounterItem {
   type: CounterType;
   targetDate?: string; // YYYY-MM-DD, for days_left
   repeat?: Repeat; // for days_left, e.g. birthdays repeat every year
-  reminder?: Reminder; // for days_left
+  reminder?: Reminder;
+  reminderTime?: string; // HH:mm, the time of the reminder
+  reminderDate?: string; // YYYY-MM-DD, for the 'custom' reminder
   startDate?: string; // YYYY-MM-DD, for days_passed (and progress of days_left)
   initialValue?: number; // e.g. weight 88
   currentValue?: number; // e.g. weight 85
