@@ -35,7 +35,7 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 - **Goal** — progress from a start value to a target value, for example weight 88 → 80.
 - Counters in groups: upcoming (nearest first), since, goals and past.
 - Details: weeks and days left, weekends left, days passed of the total.
-- Create and edit counters with a live preview, quick dates, emoji and card colors.
+- Create and edit counters with a live preview, quick dates, emoji and 12 card colors.
 - Swipe a counter on the home screen: to the right to edit it, to the left to delete it.
 - Android home screen widgets: the year, and one counter of your choice. Add them from Settings or from the home screen.
 - Native date picker on Android and iOS.

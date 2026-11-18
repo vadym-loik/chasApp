@@ -16,6 +16,7 @@
 - Swipe a counter card: right to edit, left to delete.
 - Wide widgets put the text beside the ring or the number.
 - Android reminders for countdowns (`expo-notifications`): on the day, 1 day or 1 week before, at an hour from Settings.
+- 12 card colors.
 
 ## Build and release (Android)
 

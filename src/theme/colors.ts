@@ -44,6 +44,12 @@ export const CARD_COLORS = {
   sky: { light: '#D6E9FF', dark: '#1F2C3D' },
   lilac: { light: '#E7DEFF', dark: '#2C2540' },
   rose: { light: '#FFDCE6', dark: '#3D2230' },
+  lime: { light: '#E6F5C9', dark: '#2C3420' },
+  teal: { light: '#CFF0EE', dark: '#1C3332' },
+  lavender: { light: '#DCE0FF', dark: '#24273F' },
+  sand: { light: '#F1E6D6', dark: '#353026' },
+  coral: { light: '#FFD6D1', dark: '#3D2522' },
+  gray: { light: '#E6E6EA', dark: '#2A2A30' },
 };
 export type CardColorKey = keyof typeof CARD_COLORS;
 export const CARD_COLOR_KEYS = Object.keys(CARD_COLORS) as CardColorKey[];
