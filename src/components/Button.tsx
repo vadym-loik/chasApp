@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function Button({ title, onPress, icon, variant = 'primary', disabled }: Props) {
-  const { colors } = useApp();
+  const { colors, comic, spider } = useApp();
   const background = variant === 'primary' ? colors.accent : colors.surface;
   const foreground = variant === 'primary' ? '#FFFFFF' : variant === 'danger' ? colors.danger : colors.text;
   return (
@@ -21,11 +21,14 @@ export function Button({ title, onPress, icon, variant = 'primary', disabled }: 
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: background, opacity: disabled ? 0.4 : pressed ? 0.75 : 1 },
+        { backgroundColor: background, opacity: disabled ? 0.4 : pressed && !spider ? 0.75 : 1 },
+        comic.frame,
+        // In the Spider-Verse look, a pressed button moves onto its shadow, like a pressed comic panel.
+        spider && pressed && styles.pressedComic,
       ]}
     >
       {icon && <Icon name={icon} size={20} color={foreground} />}
-      <Text style={[styles.text, { color: foreground }]}>{title}</Text>
+      <Text style={[styles.text, { color: foreground }, comic.heading]}>{title}</Text>
     </Pressable>
   );
 }
@@ -41,4 +44,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: { fontSize: 16, fontWeight: '600' },
+  pressedComic: { transform: [{ translateX: 3 }, { translateY: 3 }], boxShadow: 'none' },
 });

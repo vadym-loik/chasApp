@@ -1,10 +1,14 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import Animated, { BounceIn, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
+import { GlitchText } from '../components/GlitchText';
+import { Halftone } from '../components/Halftone';
 import { Icon } from '../components/Icon';
+import { LookToggle } from '../components/LookToggle';
 import { SwipeableCounterCard } from '../components/SwipeableCounterCard';
 import { YearCard } from '../components/YearCard';
 import { useReload } from '../hooks/useReload';
@@ -15,7 +19,7 @@ import { groupCounters, today } from '../utils/counter';
 const openCreate = () => router.push('/edit');
 
 export default function HomeScreen() {
-  const { colors, t } = useApp();
+  const { colors, comic, spider, t } = useApp();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<CounterItem[] | null>(null);
   const [now, setNow] = useState(today());
@@ -30,6 +34,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
+      {spider && <Halftone color={colors.text} opacity={0.07} />}
       <SectionList
         sections={items ? groupCounters(items, now) : []}
         keyExtractor={(item) => item.id}
@@ -40,14 +45,19 @@ export default function HomeScreen() {
             <View style={styles.titleRow}>
               <View style={styles.flex}>
                 <Text style={[styles.date, { color: colors.muted }]}>{t.formatLongDay(now)}</Text>
-                <Text style={[styles.appTitle, { color: colors.text }]}>Chas</Text>
+                {spider ? (
+                  <GlitchText style={[styles.appTitle, { color: colors.text }, comic.heading]}>Chas</GlitchText>
+                ) : (
+                  <Text style={[styles.appTitle, { color: colors.text }]}>Chas</Text>
+                )}
               </View>
+              <LookToggle />
               <Pressable
                 onPress={() => router.push('/settings')}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t.settings}
-                style={[styles.iconButton, { backgroundColor: colors.surface }]}
+                style={[styles.iconButton, { backgroundColor: colors.surface }, comic.frame]}
               >
                 <Icon name="settings" size={20} color={colors.accent} />
               </Pressable>
@@ -56,31 +66,40 @@ export default function HomeScreen() {
           </View>
         }
         renderSectionHeader={({ section }) => (
-          <Text style={[styles.sectionTitle, { color: colors.muted }]}>
+          <Text style={[styles.sectionTitle, { color: colors.muted }, spider && [styles.caption, comic.outline]]}>
             {t.sections[section.key]} · {section.data.length}
           </Text>
         )}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
+        renderItem={({ item, index }) => (
+          // In the Spider-Verse look, the cards pop in one after another.
+          <Animated.View style={styles.item} entering={spider ? ZoomIn.springify().delay(index * 70) : undefined}>
             <SwipeableCounterCard item={item} onDeleted={load} />
-          </View>
+          </Animated.View>
         )}
         ListEmptyComponent={items ? <EmptyState /> : undefined}
       />
       {/* The status bar is see-through, so this bar keeps the list from scrolling under the clock. */}
       <View style={[styles.statusBar, { height: insets.top, backgroundColor: colors.background }]} />
       {items && items.length > 0 && (
-        <Pressable
-          onPress={openCreate}
-          accessibilityRole="button"
-          accessibilityLabel={t.newCounter}
-          style={({ pressed }) => [
-            styles.fab,
-            { backgroundColor: colors.accent, bottom: insets.bottom + 20, opacity: pressed ? 0.85 : 1 },
-          ]}
+        // The key makes the button bounce in again when the user turns on the Spider-Verse look.
+        <Animated.View
+          key={spider ? 'spider' : 'classic'}
+          entering={spider ? BounceIn.delay(300) : undefined}
+          style={[styles.fabBox, { bottom: insets.bottom + 20 }]}
         >
-          <Icon name="plus" size={28} color="#FFFFFF" />
-        </Pressable>
+          <Pressable
+            onPress={openCreate}
+            accessibilityRole="button"
+            accessibilityLabel={t.newCounter}
+            style={({ pressed }) => [
+              styles.fab,
+              { backgroundColor: colors.accent, opacity: pressed ? 0.85 : 1 },
+              comic.frame,
+            ]}
+          >
+            <Icon name="plus" size={28} color="#FFFFFF" />
+          </Pressable>
+        </Animated.View>
       )}
     </View>
   );
@@ -105,7 +124,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: { paddingHorizontal: 16 },
   header: { gap: 20, marginBottom: 4 },
-  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   date: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
   appTitle: { fontSize: 34, fontWeight: '800', marginTop: 2 },
   iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
@@ -117,11 +136,21 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 10,
   },
+  // A comic caption box: yellow, tilted a little.
+  caption: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFD600',
+    color: '#111111',
+    fontStyle: 'italic',
+    fontWeight: '900',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    transform: [{ rotate: '-2deg' }],
+  },
   item: { marginBottom: 12 },
   statusBar: { position: 'absolute', top: 0, left: 0, right: 0 },
+  fabBox: { position: 'absolute', right: 20 },
   fab: {
-    position: 'absolute',
-    right: 20,
     width: 60,
     height: 60,
     borderRadius: 30,

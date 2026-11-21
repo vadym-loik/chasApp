@@ -14,13 +14,13 @@ export function Labeled({ label, children }: { label: string; children: ReactNod
 }
 
 export function Field({ label, style, ...input }: { label: string } & TextInputProps) {
-  const { colors } = useApp();
+  const { colors, comic } = useApp();
   return (
     <Labeled label={label}>
       <TextInput
         placeholderTextColor={colors.muted}
         selectionColor={colors.accent}
-        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }, style]}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }, comic.frame, style]}
         {...input}
       />
     </Labeled>

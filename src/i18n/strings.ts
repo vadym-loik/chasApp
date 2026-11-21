@@ -117,6 +117,7 @@ const en = {
 
   settings: 'Settings',
   appearance: 'Appearance',
+  spiderLook: 'Spider-Verse look',
   version: (v: string) => `Version ${v}`,
   theme: 'Theme',
   themeModes: { system: 'System', light: 'Light', dark: 'Dark' },
@@ -230,6 +231,7 @@ const uk: Strings = {
 
   settings: 'Налаштування',
   appearance: 'Вигляд',
+  spiderLook: 'Стиль Spider-Verse',
   version: (v) => `Версія ${v}`,
   theme: 'Тема',
   themeModes: { system: 'Системна', light: 'Світла', dark: 'Темна' },
@@ -344,6 +346,7 @@ const fr: Strings = {
 
   settings: 'Réglages',
   appearance: 'Apparence',
+  spiderLook: 'Style Spider-Verse',
   version: (v) => `Version ${v}`,
   theme: 'Thème',
   themeModes: { system: 'Système', light: 'Clair', dark: 'Sombre' },

@@ -8,9 +8,9 @@ interface Props<K extends string> {
 }
 
 export function Segmented<K extends string>({ options, selected, onSelect }: Props<K>) {
-  const { colors } = useApp();
+  const { colors, comic } = useApp();
   return (
-    <View style={[styles.box, { backgroundColor: colors.track }]}>
+    <View style={[styles.box, { backgroundColor: colors.track }, comic.outline]}>
       {options.map((o) => {
         const active = o.key === selected;
         return (
@@ -21,7 +21,7 @@ export function Segmented<K extends string>({ options, selected, onSelect }: Pro
             accessibilityState={{ selected: active }}
             style={[styles.item, active && { backgroundColor: colors.surface }]}
           >
-            <Text style={[styles.text, { color: active ? colors.text : colors.muted }]}>{o.label}</Text>
+            <Text style={[styles.text, { color: active ? colors.text : colors.muted }, active && comic.heading]}>{o.label}</Text>
           </Pressable>
         );
       })}

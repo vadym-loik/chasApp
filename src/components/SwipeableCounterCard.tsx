@@ -17,7 +17,7 @@ interface Props {
  * Swipe right: the edit button shows on the left. Swipe left: the red delete button shows on the right.
  */
 export function SwipeableCounterCard({ item, onDeleted }: Props) {
-  const { colors, t } = useApp();
+  const { colors, comic, t } = useApp();
 
   function action(
     icon: IconName,
@@ -35,7 +35,7 @@ export function SwipeableCounterCard({ item, onDeleted }: Props) {
         }}
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={({ pressed }) => [styles.action, gap, { backgroundColor: color, opacity: pressed ? 0.85 : 1 }]}
+        style={({ pressed }) => [styles.action, gap, { backgroundColor: color, opacity: pressed ? 0.85 : 1 }, comic.frame]}
       >
         <Icon name={icon} size={26} color="#FFFFFF" />
       </Pressable>

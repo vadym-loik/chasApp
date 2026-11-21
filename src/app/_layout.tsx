@@ -17,7 +17,7 @@ export default function RootLayout() {
 }
 
 function AppStack() {
-  const { colors, scheme, t } = useApp();
+  const { colors, comic, scheme, spider, t } = useApp();
   useReminders();
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const navigationTheme = {
@@ -38,7 +38,9 @@ function AppStack() {
         screenOptions={{
           headerShadowVisible: false,
           headerTintColor: colors.accent,
-          headerTitleStyle: { color: colors.text },
+          headerTitleStyle: { color: colors.text, ...comic.heading },
+          // The Spider-Verse look uses a fast jump up from the bottom, like a new comic panel.
+          animation: spider ? 'fade_from_bottom' : 'default',
           headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: colors.background },
         }}

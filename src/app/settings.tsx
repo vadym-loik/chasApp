@@ -19,7 +19,7 @@ import { pinWidget, WIDGET_NAMES, widgetsAvailable } from '../widgets';
 const DONATE_URL = 'https://buymeacoffee.com/vadymloik';
 
 export default function SettingsScreen() {
-  const { colors, settings, setSettings, t } = useApp();
+  const { colors, comic, spider, settings, setSettings, t } = useApp();
   const insets = useSafeAreaInsets();
 
   async function exportCounters() {
@@ -72,13 +72,16 @@ export default function SettingsScreen() {
               onSelect={(mode) => setSettings({ mode })}
             />
           </FormRow>
-          <FormRow icon="droplet" label={`${t.accent} · ${t.accents[settings.accent]}`}>
-            <ColorSwatches
-              options={ACCENT_KEYS.map((key) => ({ key, color: ACCENTS[key], label: t.accents[key] }))}
-              selected={settings.accent}
-              onSelect={(accent) => setSettings({ accent })}
-            />
-          </FormRow>
+          {/* The Spider-Verse look has its own colors, so the accent choice is only for the classic look. */}
+          {!spider && (
+            <FormRow icon="droplet" label={`${t.accent} · ${t.accents[settings.accent]}`}>
+              <ColorSwatches
+                options={ACCENT_KEYS.map((key) => ({ key, color: ACCENTS[key], label: t.accents[key] }))}
+                selected={settings.accent}
+                onSelect={(accent) => setSettings({ accent })}
+              />
+            </FormRow>
+          )}
           <FormRow icon="globe" label={t.language}>
             <Chips
               options={languages.map((l) => ({
@@ -112,8 +115,8 @@ export default function SettingsScreen() {
         </Labeled>
       )}
 
-      <View style={[styles.card, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>{t.supportTitle}</Text>
+      <View style={[styles.card, { backgroundColor: colors.surface }, comic.frame]}>
+        <Text style={[styles.cardTitle, { color: colors.text }, comic.heading]}>{t.supportTitle}</Text>
         <Text style={[styles.cardText, { color: colors.muted }]}>{t.supportText}</Text>
         <Button title="Buy Me a Coffee" onPress={() => Linking.openURL(DONATE_URL)} />
       </View>

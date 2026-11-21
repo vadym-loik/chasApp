@@ -210,10 +210,10 @@ test('applyReminderHour copies the old reminder hour only to counters without th
 test('sanitizeSettings keeps valid values and replaces damaged ones', () => {
   assert.deepEqual(
     // Old fields, like the reminder hour of version 1.2.0, are dropped.
-    sanitizeSettings({ mode: 'dark', accent: 'teal', language: 'fr', reminderHour: 20 }),
-    { mode: 'dark', accent: 'teal', language: 'fr' },
+    sanitizeSettings({ mode: 'dark', accent: 'teal', language: 'fr', look: 'spider', reminderHour: 20 }),
+    { mode: 'dark', accent: 'teal', language: 'fr', look: 'spider' },
   );
-  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de' }), DEFAULT_SETTINGS);
+  assert.deepEqual(sanitizeSettings({ mode: 'neon', accent: 'toString', language: 'de', look: 'venom' }), DEFAULT_SETTINGS);
   assert.deepEqual(sanitizeSettings(null), DEFAULT_SETTINGS);
   assert.deepEqual(sanitizeSettings('oops'), DEFAULT_SETTINGS);
 });

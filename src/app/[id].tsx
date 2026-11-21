@@ -4,6 +4,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { Field } from '../components/Field';
+import { GlitchText } from '../components/GlitchText';
+import { Halftone } from '../components/Halftone';
 import { HeaderButton } from '../components/HeaderButton';
 import { ProgressBar } from '../components/ProgressBar';
 import { useReload } from '../hooks/useReload';
@@ -15,7 +17,7 @@ import { getCounterBreakdown, getCounterDetails, getCounterStats, parseNumber, t
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, cardColor, t } = useApp();
+  const { colors, cardColor, comic, spider, t } = useApp();
   const insets = useSafeAreaInsets();
   const [item, setItem] = useState<CounterItem | null | undefined>(undefined);
   const [newValue, setNewValue] = useState('');
@@ -62,13 +64,20 @@ export default function DetailScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
       >
-        <View style={[styles.hero, { backgroundColor: cardColor(item.color) }]}>
+        <View style={[styles.hero, { backgroundColor: cardColor(item.color) }, comic.frame]}>
+          {spider && <Halftone color={colors.text} radius={HERO_RADIUS} opacity={0.12} />}
           <Text style={styles.emoji}>{item.emoji}</Text>
-          <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[styles.title, { color: colors.text }, comic.heading]}>{item.title}</Text>
           <Text style={[styles.type, { color: colors.muted }]}>{t.types[item.type].label}</Text>
-          <Text style={[styles.value, { color: colors.text }]} adjustsFontSizeToFit numberOfLines={1}>
-            {stats.value}
-          </Text>
+          {spider ? (
+            <GlitchText style={[styles.value, { color: colors.text }, comic.heading]} adjustsFontSizeToFit numberOfLines={1}>
+              {stats.value}
+            </GlitchText>
+          ) : (
+            <Text style={[styles.value, { color: colors.text }]} adjustsFontSizeToFit numberOfLines={1}>
+              {stats.value}
+            </Text>
+          )}
           <Text style={[styles.label, { color: colors.text }]}>{stats.label}</Text>
           {stats.progress !== undefined && (
             <View style={styles.progress}>
@@ -112,10 +121,12 @@ export default function DetailScreen() {
   );
 }
 
+const HERO_RADIUS = 28;
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: 16, gap: 14 },
-  hero: { borderRadius: 28, padding: 28, alignItems: 'center' },
+  hero: { borderRadius: HERO_RADIUS, padding: 28, alignItems: 'center' },
   emoji: { fontSize: 64 },
   title: { fontSize: 24, fontWeight: '700', marginTop: 8, textAlign: 'center' },
   type: { fontSize: 14, marginTop: 4 },

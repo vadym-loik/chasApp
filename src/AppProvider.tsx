@@ -5,6 +5,7 @@ import { resolveLanguage, STRINGS, type Language, type Strings } from './i18n/st
 import { DEFAULT_SETTINGS, type Settings } from './models/settings';
 import { getSettings, saveSettings } from './services/storage';
 import { cardColor, getThemeColors, type Scheme, type ThemeColors } from './theme/colors';
+import { getComicStyles, getSpiderColors, NO_COMIC, spiderCardColor, type ComicStyles } from './theme/spider';
 
 interface AppContextValue {
   settings: Settings;
@@ -12,6 +13,9 @@ interface AppContextValue {
   scheme: Scheme;
   colors: ThemeColors;
   cardColor: (key: string) => string;
+  /** True in the Spider-Verse look. Screens use it to turn on the comic animations. */
+  spider: boolean;
+  comic: ComicStyles;
   language: Language;
   t: Strings;
 }
@@ -39,6 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const scheme: Scheme =
       settings.mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : settings.mode;
     const language = resolveLanguage(settings.language, deviceLanguage);
+    const spider = settings.look === 'spider';
     return {
       settings,
       setSettings: (changes) => {
@@ -47,8 +52,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveSettings(next).catch((error: unknown) => console.warn('Settings save failed', error));
       },
       scheme,
-      colors: getThemeColors(scheme, settings.accent),
-      cardColor: (key) => cardColor(key, scheme),
+      colors: spider ? getSpiderColors(scheme) : getThemeColors(scheme, settings.accent),
+      cardColor: (key) => (spider ? spiderCardColor(key, scheme) : cardColor(key, scheme)),
+      spider,
+      comic: spider ? getComicStyles(scheme) : NO_COMIC,
       language,
       t: STRINGS[language],
     };

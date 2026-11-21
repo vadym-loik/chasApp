@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function CounterCard({ item, onPress }: Props) {
-  const { colors, cardColor, t } = useApp();
+  const { colors, cardColor, comic, spider, t } = useApp();
   const stats = getCounterStats(item, t);
   return (
     <Pressable
@@ -20,13 +20,14 @@ export function CounterCard({ item, onPress }: Props) {
       accessibilityLabel={`${item.title}: ${statsText(stats)}`}
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: cardColor(item.color), transform: [{ scale: pressed ? 0.98 : 1 }] },
+        { backgroundColor: cardColor(item.color), transform: pressTransform(pressed, spider) },
+        comic.frame,
       ]}
     >
       <View style={styles.row}>
         <Text style={styles.emoji}>{item.emoji}</Text>
         <View style={styles.titleBox}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          <Text style={[styles.title, { color: colors.text }, comic.heading]} numberOfLines={2}>
             {item.title}
           </Text>
           <Text style={[styles.details, { color: colors.muted }]} numberOfLines={2}>
@@ -34,13 +35,19 @@ export function CounterCard({ item, onPress }: Props) {
           </Text>
         </View>
         <View style={styles.valueBox}>
-          <Text style={[styles.value, { color: colors.text }]}>{stats.value}</Text>
+          <Text style={[styles.value, { color: colors.text }, comic.heading]}>{stats.value}</Text>
           <Text style={[styles.label, { color: colors.muted }]}>{stats.label}</Text>
         </View>
       </View>
       {stats.progress !== undefined && <ProgressBar progress={stats.progress} height={6} />}
     </Pressable>
   );
+}
+
+/** A pressed card shrinks a little. In the Spider-Verse look, it also squashes and tilts, like a comic panel. */
+function pressTransform(pressed: boolean, spider: boolean) {
+  if (!pressed) return [{ scale: 1 }];
+  return spider ? [{ scaleX: 0.97 }, { scaleY: 0.93 }, { rotate: '-1deg' }] : [{ scale: 0.98 }];
 }
 
 const styles = StyleSheet.create({

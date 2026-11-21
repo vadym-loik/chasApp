@@ -21,13 +21,13 @@ interface Props {
  * The icon list opens under the card. The card colors are always under the card.
  */
 export function CardEditor({ item, placeholder, onChangeTitle, onChangeEmoji, onChangeColor }: Props) {
-  const { colors, cardColor, t } = useApp();
+  const { colors, cardColor, comic, t } = useApp();
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const stats = getCounterStats(item, t);
   return (
     <View style={styles.box}>
-      <View style={[styles.card, { backgroundColor: cardColor(item.color) }]}>
+      <View style={[styles.card, { backgroundColor: cardColor(item.color) }, comic.frame]}>
         <View style={styles.row}>
           <Pressable
             onPress={() => setEmojiOpen((open) => !open)}
@@ -50,14 +50,14 @@ export function CardEditor({ item, placeholder, onChangeTitle, onChangeEmoji, on
               returnKeyType="done"
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              style={[styles.title, { color: colors.text, borderColor: focused ? colors.accent : colors.track }]}
+              style={[styles.title, { color: colors.text, borderColor: focused ? colors.accent : colors.track }, comic.heading]}
             />
             <Text style={[styles.details, { color: colors.muted }]} numberOfLines={2}>
               {getCounterDetails(item, t)}
             </Text>
           </View>
           <View style={styles.valueBox}>
-            <Text style={[styles.value, { color: colors.text }]}>{stats.value}</Text>
+            <Text style={[styles.value, { color: colors.text }, comic.heading]}>{stats.value}</Text>
             <Text style={[styles.label, { color: colors.muted }]}>{stats.label}</Text>
           </View>
         </View>

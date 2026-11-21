@@ -5,11 +5,11 @@ import { Icon, type IconName } from './Icon';
 
 /** A panel that joins some form rows, with a line between them. It shows nothing if it has no rows. */
 export function FormGroup({ children }: { children: ReactNode }) {
-  const { colors } = useApp();
+  const { colors, comic } = useApp();
   const rows = Children.toArray(children);
   if (rows.length === 0) return null;
   return (
-    <View style={[styles.group, { backgroundColor: colors.surface }]}>
+    <View style={[styles.group, { backgroundColor: colors.surface }, comic.frame]}>
       {rows.map((row, index) => (
         <Fragment key={index}>
           {index > 0 && <View style={[styles.divider, { backgroundColor: colors.track }]} />}
