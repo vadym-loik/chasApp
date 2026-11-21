@@ -3,7 +3,7 @@
 ## State
 
 - Latest release: **v1.4.0** (versionCode 5), Android APK on GitHub Releases. The release workflow built it.
-- All work is committed and pushed to `main`.
+- All work is committed and pushed to `main`. The release commit is `3b04307`, the tag is `v1.4.0`.
 - Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (32 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
 
@@ -46,7 +46,28 @@
 - `src/services/reminders.ts`: schedules notifications. It cancels all and schedules again after each change (one queue).
 - `src/widgets/`: Android widgets. The widget renderer does not support React fragments (`<>`).
 - `src/i18n/strings.ts`: all text. `t.daysLeft(n)` and `t.weekendsLeft(n)` give only the label, not the number.
-- `src/components/DateField.tsx`: date or time picker (`mode="time"`), with a web version.
+- `src/i18n/deviceStrings.ts`: `getStrings(settings)` for code outside React (reminders, widgets).
+  It is not in `strings.ts`, because the Node tests cannot load `expo-localization`.
+- `src/hooks/useReload.ts`: reloads a screen on focus and when the app comes back from the background.
+- `src/theme/colors.ts`: each accent must have a contrast of at least 4.5:1 with white text (buttons use white text).
+- `src/components/DateField.tsx`: a small date or time button for a form row (`mode="time"`), with a web version.
+  iOS uses the native compact picker.
+- Edit form (not released yet): `CardEditor` is the card with the name field, the icon button and the colors under it.
+  `FormGroup` and `FormRow` join the date, the repeat and the reminder in one panel.
+- Settings (not released yet): the same `FormGroup` panels. Appearance (theme, accent, language as chips),
+  Widgets and Backup use `ActionRow` (a tappable row). The logo and the version are at the bottom.
+- Calendar (not released yet): `src/services/calendar.ts` reads events with `expo-calendar` (read only,
+  `WRITE_CALENDAR` is blocked). `src/utils/calendar.ts` turns them into choices, with tests in `calendar.test.ts`.
+  `CalendarEventPicker` is the list. Monthly and yearly events become repeating countdowns.
+
+## Rules for the code
+
+- Tests run with Node (`src/utils/*.test.ts`). Node cannot load Expo or React Native modules.
+  Put logic that needs tests in `src/models/` or `src/utils/`, without native imports.
+- Read saved counters only through `getCounters()`. It uses `toCounter()` to repair old data.
+- `updateCounter()` takes the whole counter, not a partial change, so the types stay strict.
+- Write new storage changes inside `queued()` in `storage.ts`.
+- Release notes: the same sections as 1.3.0 and 1.4.0, in simple English, and an "Install" section at the end.
 
 ## Build and release (Android)
 
@@ -94,6 +115,9 @@ These parts pass the checks, but nobody has used them on a device yet:
 - The move of the 1.2.0 reminder hour to the counters.
 - Swipe to edit or delete.
 - The new year card and the wide widgets.
+- Not released: the calendar event list (permission, all-day dates, birthdays), the new edit form on Android and iOS.
+- 1.4.0: backup export and import (the share sheet and the file picker), the bar behind the status bar,
+  the reload after the app comes back from the background, 3 reminders ahead for repeating countdowns.
 
 ## Known limits
 
@@ -106,9 +130,12 @@ These parts pass the checks, but nobody has used them on a device yet:
   If the user does not open the app for 3 full periods, the next reminder does not come.
 - A custom reminder comes only once. There is no repeating reminder (for example, each week for a goal).
 - Swipe actions have no screen reader support. The details screen still has edit and delete.
+- A backup has only the counters. It does not have the settings or the widget choices.
+- The README screenshots show the old accent colors (before 1.4.0). Do not change them without the owner's approval.
 
 ## Ideas for next time
 
 - Add a screenshot of the reminder options to the README (from a phone; the web build has no reminders).
 - Repeating reminders, for example each week to update a goal.
 - Calendar view, tags, pinned counters.
+- Settings in the backup file (the format has a `version` field for this change).
