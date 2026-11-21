@@ -2,12 +2,12 @@
 
 ## State
 
-- Latest release: **v1.5.0** (versionCode 6), Android APK on GitHub Releases. The release workflow built it.
-- All work is committed and pushed to `main`. The release commit is `d28d123`, the tag is `v1.5.0`.
-- The 1.5.0 APK was checked before the release: versionCode 6, the release key (SHA-256 below),
+- Latest release: **v1.6.0** (versionCode 7), Android APK on GitHub Releases. The release workflow built it.
+- All work is committed and pushed to `main`. The release commit is `3f6f1ec`, the tag is `v1.6.0`.
+- The 1.6.0 APK was checked before the release: versionCode 7, the release key (SHA-256 below),
   `READ_CALENDAR` only (no `WRITE_CALENDAR`, no `SYSTEM_ALERT_WINDOW`).
-- The emulator `chas-test` has the 1.5.0 release variant (debug key) with demo counters and a test calendar
-  ("Test", 6 events). Use it for the next screenshots. It does not have your real data.
+- The emulator `chas-test` has the 1.6.0 release variant (debug key) with demo counters and a test calendar
+  ("Test", 6 events), in the classic look and the system theme. Use it for the next screenshots. It does not have your real data.
 - Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (36 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
 
@@ -21,6 +21,7 @@
 | 1.3.0 | 4 | Reminder date and time for all counters, 12 card colors, year in the date, new year card |
 | 1.4.0 | 5 | Backup and restore, 3 reminders ahead for repeating events, better contrast, bug fixes |
 | 1.5.0 | 6 | Countdown from a calendar event, new counter form, new settings page |
+| 1.6.0 | 7 | Comic Spider-Verse look with a switch on the home screen |
 
 ## What the app has
 
@@ -28,6 +29,7 @@
 - Home screen: the date with the year, and a year card (ring, days left and weekends left side by side, day of the year).
 - Swipe a counter card: right to edit, left to delete (with a confirm dialog).
 - 12 card colors. Light, dark and system themes, six accent colors.
+- Two looks: classic, and a comic Spider-Verse look (the spider button on the home screen).
 - English, Ukrainian, French.
 - Android widgets: Year, and Counter (the user chooses the counter). Wide widgets put the text beside the ring or the number.
 - Android reminders (`expo-notifications`):
@@ -55,6 +57,12 @@
   It is not in `strings.ts`, because the Node tests cannot load `expo-localization`.
 - `src/hooks/useReload.ts`: reloads a screen on focus and when the app comes back from the background.
 - `src/theme/colors.ts`: each accent must have a contrast of at least 4.5:1 with white text (buttons use white text).
+- Spider-Verse look (1.6.0): `settings.look` is `'classic'` or `'spider'`. `src/theme/spider.ts` has its colors,
+  its card colors and the comic styles. `useApp()` gives `spider` (true or false) and `comic` (`frame`, `outline`,
+  `heading`; empty objects in the classic look), so a component adds `comic.frame` to its style.
+  `LookToggle` is the switch, `GlitchText` the red and blue text, `Halftone` the dots.
+  The animations run only in this look. The accent choice is hidden in it. Widgets always use the classic look.
+  `Halftone` measures its size with `onLayout`: an Svg with a size of 100% stops at 300×150 on Android.
 - `src/components/DateField.tsx`: a small date or time button for a form row (`mode="time"`), with a web version.
   iOS uses the native compact picker.
 - Edit form (1.5.0): `CardEditor` is the card with the name field, the icon button and the colors under it.
@@ -123,6 +131,9 @@ Certificate SHA-256: `8927b7fc…48e89b93`. Each new APK must have the same one.
 
 These parts pass the checks, but nobody has used them on a device yet:
 
+- 1.6.0: the Spider-Verse look passed a test on the Android emulator (light and dark, home, counter, edit form,
+  settings, swipe). Not tested on a real phone or on iOS. Not tested with "Remove animations" on.
+
 - Reminders: the notification, the tap that opens the counter, the custom date, the time picker.
 - The move of the 1.2.0 reminder hour to the counters.
 - Swipe to edit or delete.
@@ -162,6 +173,10 @@ These parts pass the checks, but nobody has used them on a device yet:
   Crop 136 px at the top and 63 px at the bottom (system bars), then scale to 780 px wide.
 
 ## Ideas for next time
+
+- Own date, time and message dialogs in the app style. The Android date dialog cannot follow the theme at runtime
+  (the datetimepicker config plugin sets its colors only at build time).
+- The counter type switch on the new counter form goes a little under the header (seen on a phone, 1.6.0).
 
 - Add a screenshot of the reminder options to the README (from a phone; the web build has no reminders).
 - A new `widgets.jpg` from 1.5.0.
