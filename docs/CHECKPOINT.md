@@ -59,6 +59,8 @@
 - Calendar (not released yet): `src/services/calendar.ts` reads events with `expo-calendar` (read only,
   `WRITE_CALENDAR` is blocked). `src/utils/calendar.ts` turns them into choices, with tests in `calendar.test.ts`.
   `CalendarEventPicker` is the list. Monthly and yearly events become repeating countdowns.
+  On Android, ask for `READ_CALENDAR` with `PermissionsAndroid`, not with `expo-calendar`:
+  its check needs read and write access together, so it always fails while `WRITE_CALENDAR` is blocked.
 
 ## Rules for the code
 
@@ -94,6 +96,11 @@ Tools (not global):
 - JDK 17: `mise where java@temurin-17`
 - Android SDK: `~/Android/Sdk` (build-tools 37.0.0)
 - Emulator profile `chas-test` (Android 16): `ANDROID_AVD_HOME=~/.config/.android/avd`
+- The shell does not set these paths. Before `npx expo run:android`, set `ANDROID_HOME`, `ANDROID_AVD_HOME`,
+  `JAVA_HOME`, and put `$JAVA_HOME/bin`, `platform-tools` and `emulator` on `PATH`.
+- `expo run:android` does not make `android/` again after a change to `app.json` or a new native module.
+  Run `CI=1 npx expo prebuild --platform android --clean` first, then put back the `package.json` scripts.
+- A debug build cannot replace a release APK (other signing key). Uninstall the app first. This deletes its data.
 
 Steps:
 
@@ -115,7 +122,9 @@ These parts pass the checks, but nobody has used them on a device yet:
 - The move of the 1.2.0 reminder hour to the counters.
 - Swipe to edit or delete.
 - The new year card and the wide widgets.
-- Not released: the calendar event list (permission, all-day dates, birthdays), the new edit form on Android and iOS.
+- Not released: the calendar event list and the new edit form passed a test on the Android emulator
+  (permission, a yearly all-day birthday, a timed event). Not tested on a real phone or on iOS.
+  The settings page is not tested on Android.
 - 1.4.0: backup export and import (the share sheet and the file picker), the bar behind the status bar,
   the reload after the app comes back from the background, 3 reminders ahead for repeating countdowns.
 
