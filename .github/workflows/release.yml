@@ -1,6 +1,12 @@
-# Builds the signed Android APK.
-# - Push a tag `vX.Y.Z`: the APK goes to a draft GitHub release. Edit the notes, then publish it.
-# - Run the workflow by hand (Actions → Release → Run workflow) and choose a tag: the APK is only a build artifact.
+# Builds the signed Android APK. It runs only by hand.
+# 1. Push a tag `vX.Y.Z`. The tag must match the version in app.json.
+# 2. Actions → Release → Run workflow → "Use workflow from" → choose the tag.
+# 3. The APK goes to a draft GitHub release. Edit the notes, then publish it.
+#
+# The work has two jobs:
+# - `build` runs npm, Expo and Gradle code. It has no secrets and a read-only token.
+# - `sign` has the keystore and runs only trusted steps: the artifact actions, apksigner and gh.
+# So a bad npm or Gradle package cannot read the signing key.
 #
 # The signing secrets are in the `release` environment (Settings → Environments → release).
 # The environment accepts only `v*` tags, so a branch or a pull request cannot read the key.
@@ -9,31 +15,43 @@
 #   ANDROID_KEY_ALIAS          the key alias
 #
 # Each action is pinned to a commit, so nobody can change its code later. Update the hash and the comment together.
+# The release does not use the npm or Gradle cache, so a poisoned cache cannot get into the APK.
 name: Release
 
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
-  android:
+  build:
     runs-on: ubuntu-latest
-    environment: release
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
+      - name: Require a tag
+        run: |
+          if [[ "$GITHUB_REF_TYPE" != tag ]]; then
+            echo "::error::Run this workflow from a v* tag, not from $GITHUB_REF_NAME"
+            exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: npm
+          package-manager-cache: false
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-disabled: true
 
       - run: npm ci
       - run: npm run typecheck
@@ -44,12 +62,12 @@ jobs:
         id: version
         run: |
           version=$(node -p "require('./app.json').expo.version")
-          echo "version=$version" >> "$GITHUB_OUTPUT"
           # The tag must match the app version, so the APK name and the release agree.
-          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match app.json version $version"
             exit 1
           fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Generate the native Android project
         run: npx expo prebuild --platform android --clean
@@ -60,31 +78,53 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
 
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unsigned-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 1
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write # only for the draft release
+    env:
+      APK: Chas-${{ needs.build.outputs.version }}.apk
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: unsigned-apk
+
       - name: Sign the APK
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          keystore="$RUNNER_TEMP/release.keystore"
+          trap 'rm -f "$keystore"' EXIT
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
           build_tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          apk="Chas-${{ steps.version.outputs.version }}.apk"
           "$build_tools/apksigner" sign \
-            --ks "$RUNNER_TEMP/release.keystore" --ks-key-alias "$KEY_ALIAS" \
+            --ks "$keystore" --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
-            --out "$apk" android/app/build/outputs/apk/release/app-release.apk
-          "$build_tools/apksigner" verify "$apk"
-          rm "$RUNNER_TEMP/release.keystore"
+            --out "$APK" app-release.apk
+          "$build_tools/apksigner" verify "$APK"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Chas-${{ steps.version.outputs.version }}
-          path: Chas-${{ steps.version.outputs.version }}.apk
+          name: Chas-${{ needs.build.outputs.version }}
+          path: ${{ env.APK }}
+          if-no-files-found: error
 
       - name: Create a draft release
-        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "Chas-${{ steps.version.outputs.version }}.apk" \
-            --draft --title "Chas ${{ steps.version.outputs.version }}" --generate-notes
+          gh release create "$GITHUB_REF_NAME" "$APK" \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --draft --title "Chas $VERSION" --generate-notes

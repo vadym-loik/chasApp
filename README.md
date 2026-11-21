@@ -82,15 +82,17 @@ npm test
 GitHub Actions builds the releases:
 
 - **CI** (`.github/workflows/ci.yml`) runs typecheck, lint and tests on each push to `main` and each pull request.
-- **Release** (`.github/workflows/release.yml`) runs on a tag `vX.Y.Z`. It builds and signs the APK and creates a draft release.
+- **Release** (`.github/workflows/release.yml`) runs only by hand, from a tag `vX.Y.Z`. It builds and signs the APK and creates a draft release.
+- **Security audit** (`.github/workflows/security.yml`) checks the workflows with [zizmor](https://docs.zizmor.sh) and the packages with `npm audit`. It runs by hand and when the workflows or `package-lock.json` change.
 
 To make a release:
 
 1. Raise `expo.version` and `expo.android.versionCode` in `app.json`, and `version` in `package.json`.
 2. Commit, then `git tag -a vX.Y.Z -m "Chas X.Y.Z"` and `git push origin main vX.Y.Z`. The tag must match `expo.version`.
-3. When the workflow ends, edit the notes of the draft release and publish it.
+3. Open Actions → Release → Run workflow. In "Use workflow from", choose the tag `vX.Y.Z`.
+4. When the workflow ends, edit the notes of the draft release and publish it.
 
-The signing key is in the GitHub environment `release`. It accepts only `v*` tags.
+The signing key is in the GitHub environment `release`. It accepts only `v*` tags. Only the `sign` job reads the key. The `build` job runs the npm and Gradle code without secrets.
 
 ## Build the APK on your computer
 
