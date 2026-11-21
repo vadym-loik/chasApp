@@ -47,5 +47,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test src/utils/*.test.ts"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@expo/fingerprint": {
+      "minimatch": "^11.0.1"
+    }
+  }
 }
