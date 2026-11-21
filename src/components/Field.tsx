@@ -27,7 +27,9 @@ export function Field({ label, style, ...input }: { label: string } & TextInputP
   );
 }
 
-export const inputStyle = { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 };
+const inputStyle = { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 };
+/** A small button inside a form row, for example a date. */
+export const pillStyle = { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 };
 
 const styles = StyleSheet.create({
   box: { gap: 8 },

@@ -85,7 +85,6 @@ const en = {
   newCounter: 'New counter',
 
   editCounter: 'Edit',
-  whatToCount: 'What do you count?',
   name: 'Name',
   icon: 'Icon',
   eventDate: 'Event date',
@@ -93,7 +92,6 @@ const en = {
   startValue: 'Start',
   currentShort: 'Now',
   targetValue: 'Target',
-  cardColor: 'Card color',
   save: 'Save',
   create: 'Create',
   errorName: 'Enter a name.',
@@ -194,7 +192,6 @@ const uk: Strings = {
   newCounter: 'Новий лічильник',
 
   editCounter: 'Редагувати',
-  whatToCount: 'Що рахуємо?',
   name: 'Назва',
   icon: 'Іконка',
   eventDate: 'Дата події',
@@ -202,7 +199,6 @@ const uk: Strings = {
   startValue: 'Старт',
   currentShort: 'Зараз',
   targetValue: 'Мета',
-  cardColor: 'Колір картки',
   save: 'Зберегти',
   create: 'Створити',
   errorName: 'Введіть назву.',
@@ -304,7 +300,6 @@ const fr: Strings = {
   newCounter: 'Nouveau compteur',
 
   editCounter: 'Modifier',
-  whatToCount: 'Que compter\u00A0?',
   name: 'Nom',
   icon: 'Icône',
   eventDate: 'Date de l’événement',
@@ -312,7 +307,6 @@ const fr: Strings = {
   startValue: 'Départ',
   currentShort: 'Actuel',
   targetValue: 'Objectif',
-  cardColor: 'Couleur de la carte',
   save: 'Enregistrer',
   create: 'Créer',
   errorName: 'Saisissez un nom.',

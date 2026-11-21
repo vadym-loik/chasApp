@@ -4,13 +4,11 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, Vi
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
+import { CardEditor } from '../components/CardEditor';
 import { Chips } from '../components/Chips';
-import { ColorSwatches } from '../components/ColorSwatches';
-import { CounterCard } from '../components/CounterCard';
 import { DateField } from '../components/DateField';
-import { EmojiPicker } from '../components/EmojiPicker';
-import { Field, Labeled } from '../components/Field';
-import { OptionRow } from '../components/OptionRow';
+import { Field } from '../components/Field';
+import { FormGroup, FormRow } from '../components/FormGroup';
 import { Segmented } from '../components/Segmented';
 import {
   COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, DEFAULT_REMINDER_TIME, REPEATS, type CounterItem, type CounterType, type NewCounter,
@@ -18,7 +16,7 @@ import {
 } from '../models/counter';
 import { remindersAvailable, requestReminderPermission } from '../services/reminders';
 import { addCounter, getCounter, updateCounter } from '../services/storage';
-import { CARD_COLOR_KEYS, cardColor, type CardColorKey } from '../theme/colors';
+import { CARD_COLOR_KEYS } from '../theme/colors';
 import { addDays, getReminderOptions, isFutureCustomReminder, parseNumber, today } from '../utils/counter';
 
 /** Creates a counter, or edits one when the route has an `id` param. */
@@ -49,7 +47,7 @@ const QUICK_DATES = [
 ] as const;
 
 function CounterForm({ initial }: { initial: CounterItem | null }) {
-  const { colors, scheme, t } = useApp();
+  const { colors, t } = useApp();
   const insets = useSafeAreaInsets();
   const countdown = initial?.type === 'days_left' ? initial : undefined;
   const since = initial?.type === 'days_passed' ? initial : undefined;
@@ -135,7 +133,8 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
   }
 
   const draft = buildDraft();
-  const preview: CounterItem = { ...draft, id: 'preview', title: draft.title || t.types[type].placeholder };
+  // The card shows the name as the user types it, with spaces.
+  const preview: CounterItem = { ...draft, id: 'preview', title };
 
   async function save() {
     const problem = validate(draft);
@@ -155,114 +154,105 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
     }
   }
 
+  const reminderRow = remindersAvailable && (
+    <FormRow icon="bell" label={t.reminder}>
+      <Chips
+        options={getReminderOptions(type, repeat).map((key) => ({
+          key,
+          label: t.reminders[key],
+          active: key === reminder,
+          onPress: () => chooseReminder(key),
+        }))}
+      />
+      {reminder !== 'none' && (
+        <View style={styles.pills}>
+          {reminder === 'custom' && <DateField label={t.reminderDate} value={reminderDate} onChange={setReminderDate} />}
+          <DateField label={t.reminderTime} value={reminderTime} onChange={setReminderTime} mode="time" />
+        </View>
+      )}
+    </FormRow>
+  );
+
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
       >
-        <CounterCard item={preview} />
-
         {!initial && (
-          <Labeled label={t.whatToCount}>
-            {COUNTER_TYPE_KEYS.map((key) => (
-              <OptionRow
-                key={key}
-                emoji={COUNTER_TYPE_EMOJI[key]}
-                title={t.types[key].label}
-                description={t.types[key].description}
-                active={key === type}
-                onPress={() => chooseType(key)}
-              />
-            ))}
-          </Labeled>
+          <View style={styles.typeBox}>
+            <Segmented
+              options={COUNTER_TYPE_KEYS.map((key) => ({ key, label: t.types[key].label }))}
+              selected={type}
+              onSelect={chooseType}
+            />
+            <Text style={[styles.hint, { color: colors.muted }]}>{t.types[type].description}</Text>
+          </View>
         )}
 
-        <Field
-          label={t.name}
-          value={title}
-          onChangeText={(v) => {
+        <CardEditor
+          item={preview}
+          placeholder={t.types[type].placeholder}
+          onChangeTitle={(v) => {
             setTitle(v);
             setError('');
           }}
-          placeholder={t.types[type].placeholder}
-          maxLength={40}
-          returnKeyType="done"
+          onChangeEmoji={setEmoji}
+          onChangeColor={setColor}
         />
 
-        <Labeled label={t.icon}>
-          <EmojiPicker selected={emoji} onSelect={setEmoji} />
-        </Labeled>
-
         {type === 'days_left' && (
-          <>
-            <View style={styles.dateBlock}>
-              <DateField label={t.eventDate} value={targetDate} onChange={setTargetDate} />
+          <FormGroup>
+            <FormRow
+              icon="calendar"
+              label={t.eventDate}
+              action={<DateField label={t.eventDate} value={targetDate} onChange={setTargetDate} />}
+            >
               <Chips
                 options={QUICK_DATES.map((q) => {
                   const date = addDays(today(), q.amount, q.unit);
                   return { key: q.key, label: t.quickDates[q.key], active: date === targetDate, onPress: () => setTargetDate(date) };
                 })}
               />
-            </View>
-            <Labeled label={t.repeat}>
+            </FormRow>
+            <FormRow icon="repeat" label={t.repeat}>
               <Segmented
                 options={REPEATS.map((key) => ({ key, label: t.repeats[key] }))}
                 selected={repeat}
                 onSelect={chooseRepeat}
               />
-            </Labeled>
+            </FormRow>
+            {reminderRow}
+          </FormGroup>
+        )}
+        {type === 'days_passed' && (
+          <FormGroup>
+            <FormRow
+              icon="calendar"
+              label={t.startDate}
+              action={<DateField label={t.startDate} value={startDate} onChange={setStartDate} />}
+            />
+            {reminderRow}
+          </FormGroup>
+        )}
+        {type === 'goal_progress' && (
+          <>
+            <View style={styles.row}>
+              <View style={styles.flex}>
+                <Field label={t.startValue} value={initialValue} onChangeText={setInitialValue} keyboardType="decimal-pad" placeholder="88" />
+              </View>
+              {initial && (
+                <View style={styles.flex}>
+                  <Field label={t.currentShort} value={currentValue} onChangeText={setCurrentValue} keyboardType="decimal-pad" />
+                </View>
+              )}
+              <View style={styles.flex}>
+                <Field label={t.targetValue} value={targetValue} onChangeText={setTargetValue} keyboardType="decimal-pad" placeholder="80" />
+              </View>
+            </View>
+            <FormGroup>{reminderRow}</FormGroup>
           </>
         )}
-        {type === 'days_passed' && <DateField label={t.startDate} value={startDate} onChange={setStartDate} />}
-        {type === 'goal_progress' && (
-          <View style={styles.row}>
-            <View style={styles.flex}>
-              <Field label={t.startValue} value={initialValue} onChangeText={setInitialValue} keyboardType="decimal-pad" placeholder="88" />
-            </View>
-            {initial && (
-              <View style={styles.flex}>
-                <Field label={t.currentShort} value={currentValue} onChangeText={setCurrentValue} keyboardType="decimal-pad" />
-              </View>
-            )}
-            <View style={styles.flex}>
-              <Field label={t.targetValue} value={targetValue} onChangeText={setTargetValue} keyboardType="decimal-pad" placeholder="80" />
-            </View>
-          </View>
-        )}
-
-        {remindersAvailable && (
-          <Labeled label={t.reminder}>
-            <Chips
-              options={getReminderOptions(type, repeat).map((key) => ({
-                key,
-                label: t.reminders[key],
-                active: key === reminder,
-                onPress: () => chooseReminder(key),
-              }))}
-            />
-            {reminder !== 'none' && (
-              <View style={styles.row}>
-                {reminder === 'custom' && (
-                  <View style={styles.flex}>
-                    <DateField label={t.reminderDate} value={reminderDate} onChange={setReminderDate} />
-                  </View>
-                )}
-                <View style={styles.flex}>
-                  <DateField label={t.reminderTime} value={reminderTime} onChange={setReminderTime} mode="time" />
-                </View>
-              </View>
-            )}
-          </Labeled>
-        )}
-
-        <Labeled label={t.cardColor}>
-          <ColorSwatches<CardColorKey>
-            options={CARD_COLOR_KEYS.map((key) => ({ key, color: cardColor(key, scheme), label: t.cardColors[key] }))}
-            selected={color as CardColorKey}
-            onSelect={setColor}
-          />
-        </Labeled>
 
         {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
         <Button title={initial ? t.save : t.create} icon="check" onPress={save} disabled={saving} />
@@ -273,8 +263,10 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { padding: 16, gap: 22 },
+  content: { padding: 16, gap: 20 },
   row: { flexDirection: 'row', gap: 10 },
-  dateBlock: { gap: 10 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeBox: { gap: 8 },
+  hint: { fontSize: 13, textAlign: 'center' },
   error: { fontSize: 14, textAlign: 'center' },
 });

@@ -16,7 +16,7 @@ export function Chips({ options }: Props) {
           onPress={o.onPress}
           accessibilityRole="button"
           accessibilityState={{ selected: o.active }}
-          style={[styles.chip, { backgroundColor: o.active ? colors.accent : colors.surface }]}
+          style={[styles.chip, { backgroundColor: o.active ? colors.accent : colors.track }]}
         >
           <Text style={[styles.text, { color: o.active ? '#FFFFFF' : colors.text }]}>{o.label}</Text>
         </Pressable>
