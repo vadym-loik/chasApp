@@ -3,7 +3,11 @@
 ## State
 
 - Latest release: **v1.5.0** (versionCode 6), Android APK on GitHub Releases. The release workflow built it.
-- All work is committed and pushed to `main`. The release commit has the tag `v1.5.0`.
+- All work is committed and pushed to `main`. The release commit is `d28d123`, the tag is `v1.5.0`.
+- The 1.5.0 APK was checked before the release: versionCode 6, the release key (SHA-256 below),
+  `READ_CALENDAR` only (no `WRITE_CALENDAR`, no `SYSTEM_ALERT_WINDOW`).
+- The emulator `chas-test` has the 1.5.0 release variant (debug key) with demo counters and a test calendar
+  ("Test", 6 events). Use it for the next screenshots. It does not have your real data.
 - Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (36 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
 
@@ -126,6 +130,8 @@ These parts pass the checks, but nobody has used them on a device yet:
 - 1.5.0: the calendar event list and the new edit form passed a test on the Android emulator
   (permission, a yearly all-day birthday, a timed event). Not tested on a real phone or on iOS.
   The settings page passed a test on the emulator too.
+  To test next on a real phone: a real Google calendar (contact birthdays and holiday calendars can make the list long),
+  Ukrainian and French text in the new form, dark mode.
 - 1.4.0: backup export and import (the share sheet and the file picker), the bar behind the status bar,
   the reload after the app comes back from the background, 3 reminders ahead for repeating countdowns.
 
@@ -141,6 +147,13 @@ These parts pass the checks, but nobody has used them on a device yet:
 - A custom reminder comes only once. There is no repeating reminder (for example, each week for a goal).
 - Swipe actions have no screen reader support. The details screen still has edit and delete.
 - A backup has only the counters. It does not have the settings or the widget choices.
+- Backup is not on web (`expo-file-system`). A web version would need `backup.web.ts` (a browser download and a file input).
+- The calendar list shows all events of the next year, with no search. A large calendar gives a long list.
+- The calendar does not work in Expo Go. It needs a development build.
+- Debug only: opening `chasapp://edit` directly makes the form the first screen, so "Create" cannot go back
+  (a dev warning, the counter is saved). Users always open the form from the app, so this does not happen in the APK.
+- The emulator has only 2.5 GB of memory. Once the keyboard froze and no input worked, also in the system apps.
+  A restart of the emulator (`adb reboot`, then `adb reverse tcp:8081 tcp:8081`) fixed it.
 - The README screenshots come from the emulator with demo data (after 1.4.0). `widgets.jpg` is still from 1.3.0.
   Ask the owner before you change the screenshots.
   How they were made: `npx expo run:android --variant release` (no dev warnings on the screen).
@@ -151,6 +164,12 @@ These parts pass the checks, but nobody has used them on a device yet:
 ## Ideas for next time
 
 - Add a screenshot of the reminder options to the README (from a phone; the web build has no reminders).
+- A new `widgets.jpg` from 1.5.0.
+- Backup on web (see Known limits).
+- A search field or a calendar filter in the calendar event list, if the list is too long on real phones.
+- iOS build with EAS, to test the calendar and the compact date picker on an iPhone.
+- Remove the require cycle `storage.ts` ↔ `reminders.ts` (a dev warning at each start).
+- A LinkedIn post for 1.5.0 is written (long and short versions). Use 2 or 3 screenshots with it.
 - Repeating reminders, for example each week to update a goal.
 - Calendar view, tags, pinned counters.
 - Settings in the backup file (the format has a `version` field for this change).
