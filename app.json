@@ -23,7 +23,8 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.WRITE_CALENDAR"
       ],
       "versionCode": 5
     },
@@ -93,7 +94,13 @@
           ]
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow Chas to read your calendar, so you can make a countdown from an event."
+        }
+      ]
     ],
     "scheme": "chasapp"
   }

@@ -4,6 +4,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, Vi
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../AppProvider';
 import { Button } from '../components/Button';
+import { CalendarEventPicker } from '../components/CalendarEventPicker';
 import { CardEditor } from '../components/CardEditor';
 import { Chips } from '../components/Chips';
 import { DateField } from '../components/DateField';
@@ -14,9 +15,11 @@ import {
   COUNTER_TYPE_EMOJI, COUNTER_TYPE_KEYS, DEFAULT_REMINDER_TIME, REPEATS, type CounterItem, type CounterType, type NewCounter,
   type Reminder, type Repeat,
 } from '../models/counter';
+import { calendarAvailable, requestCalendarAccess } from '../services/calendar';
 import { remindersAvailable, requestReminderPermission } from '../services/reminders';
 import { addCounter, getCounter, updateCounter } from '../services/storage';
 import { CARD_COLOR_KEYS } from '../theme/colors';
+import type { CalendarEventOption } from '../utils/calendar';
 import { addDays, getReminderOptions, isFutureCustomReminder, parseNumber, today } from '../utils/counter';
 
 /** Creates a counter, or edits one when the route has an `id` param. */
@@ -71,6 +74,7 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
   const [error, setError] = useState('');
   // Blocks a second tap while the first save runs, so one tap makes one counter.
   const [saving, setSaving] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   function chooseType(next: CounterType) {
     // Change the emoji only if the user did not pick one.
@@ -95,6 +99,22 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
       return;
     }
     setReminder(next);
+  }
+
+  async function openCalendar() {
+    if (!(await requestCalendarAccess())) {
+      Alert.alert(t.fromCalendar, t.calendarOff);
+      return;
+    }
+    setCalendarOpen(true);
+  }
+
+  function chooseEvent(event: CalendarEventOption) {
+    setTitle(event.title.slice(0, 40));
+    setTargetDate(event.date);
+    chooseRepeat(event.repeat);
+    setError('');
+    setCalendarOpen(false);
   }
 
   /** The counter from the form. A value that the user did not enter yet gets the start value. */
@@ -209,10 +229,15 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
               action={<DateField label={t.eventDate} value={targetDate} onChange={setTargetDate} />}
             >
               <Chips
-                options={QUICK_DATES.map((q) => {
-                  const date = addDays(today(), q.amount, q.unit);
-                  return { key: q.key, label: t.quickDates[q.key], active: date === targetDate, onPress: () => setTargetDate(date) };
-                })}
+                options={[
+                  ...QUICK_DATES.map((q) => {
+                    const date = addDays(today(), q.amount, q.unit);
+                    return { key: q.key, label: t.quickDates[q.key], active: date === targetDate, onPress: () => setTargetDate(date) };
+                  }),
+                  ...(calendarAvailable
+                    ? [{ key: 'calendar', label: `📅 ${t.fromCalendar}`, active: false, onPress: openCalendar }]
+                    : []),
+                ]}
               />
             </FormRow>
             <FormRow icon="repeat" label={t.repeat}>
@@ -257,6 +282,7 @@ function CounterForm({ initial }: { initial: CounterItem | null }) {
         {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
         <Button title={initial ? t.save : t.create} icon="check" onPress={save} disabled={saving} />
       </ScrollView>
+      {calendarOpen && <CalendarEventPicker onSelect={chooseEvent} onClose={() => setCalendarOpen(false)} />}
     </KeyboardAvoidingView>
   );
 }
