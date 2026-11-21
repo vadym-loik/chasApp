@@ -1,10 +1,10 @@
-# Checkpoint — 18 November 2026
+# Checkpoint — 21 November 2026
 
 ## State
 
-- Latest release: **v1.4.0** (versionCode 5), Android APK on GitHub Releases. The release workflow built it.
-- All work is committed and pushed to `main`. The release commit is `3b04307`, the tag is `v1.4.0`.
-- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (32 tests), `npx expo-doctor` (20/20).
+- Latest release: **v1.5.0** (versionCode 6), Android APK on GitHub Releases. The release workflow built it.
+- All work is committed and pushed to `main`. The release commit has the tag `v1.5.0`.
+- Checks pass: `npm run typecheck`, `npm run lint`, `npm test` (36 tests), `npx expo-doctor` (20/20).
 - CI and the release workflow pass on GitHub.
 
 ## Releases
@@ -16,6 +16,7 @@
 | 1.2.0 | 3 | Reminders for countdowns, swipe to edit or delete, wide widgets |
 | 1.3.0 | 4 | Reminder date and time for all counters, 12 card colors, year in the date, new year card |
 | 1.4.0 | 5 | Backup and restore, 3 reminders ahead for repeating events, better contrast, bug fixes |
+| 1.5.0 | 6 | Countdown from a calendar event, new counter form, new settings page |
 
 ## What the app has
 
@@ -52,11 +53,11 @@
 - `src/theme/colors.ts`: each accent must have a contrast of at least 4.5:1 with white text (buttons use white text).
 - `src/components/DateField.tsx`: a small date or time button for a form row (`mode="time"`), with a web version.
   iOS uses the native compact picker.
-- Edit form (not released yet): `CardEditor` is the card with the name field, the icon button and the colors under it.
+- Edit form (1.5.0): `CardEditor` is the card with the name field, the icon button and the colors under it.
   `FormGroup` and `FormRow` join the date, the repeat and the reminder in one panel.
-- Settings (not released yet): the same `FormGroup` panels. Appearance (theme, accent, language as chips),
+- Settings (1.5.0): the same `FormGroup` panels. Appearance (theme, accent, language as chips),
   Widgets and Backup use `ActionRow` (a tappable row). The logo and the version are at the bottom.
-- Calendar (not released yet): `src/services/calendar.ts` reads events with `expo-calendar` (read only,
+- Calendar (1.5.0): `src/services/calendar.ts` reads events with `expo-calendar` (read only,
   `WRITE_CALENDAR` is blocked). `src/utils/calendar.ts` turns them into choices, with tests in `calendar.test.ts`.
   `CalendarEventPicker` is the list. Monthly and yearly events become repeating countdowns.
   On Android, ask for `READ_CALENDAR` with `PermissionsAndroid`, not with `expo-calendar`:
@@ -122,7 +123,7 @@ These parts pass the checks, but nobody has used them on a device yet:
 - The move of the 1.2.0 reminder hour to the counters.
 - Swipe to edit or delete.
 - The new year card and the wide widgets.
-- Not released: the calendar event list and the new edit form passed a test on the Android emulator
+- 1.5.0: the calendar event list and the new edit form passed a test on the Android emulator
   (permission, a yearly all-day birthday, a timed event). Not tested on a real phone or on iOS.
   The settings page passed a test on the emulator too.
 - 1.4.0: backup export and import (the share sheet and the file picker), the bar behind the status bar,
