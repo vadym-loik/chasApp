@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chas",
     "slug": "chasapp",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -26,7 +26,7 @@
         "android.permission.VIBRATE",
         "android.permission.WRITE_CALENDAR"
       ],
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "favicon": "./assets/favicon.png"
