@@ -124,7 +124,7 @@ These parts pass the checks, but nobody has used them on a device yet:
 - The new year card and the wide widgets.
 - Not released: the calendar event list and the new edit form passed a test on the Android emulator
   (permission, a yearly all-day birthday, a timed event). Not tested on a real phone or on iOS.
-  The settings page is not tested on Android.
+  The settings page passed a test on the emulator too.
 - 1.4.0: backup export and import (the share sheet and the file picker), the bar behind the status bar,
   the reload after the app comes back from the background, 3 reminders ahead for repeating countdowns.
 
@@ -140,7 +140,12 @@ These parts pass the checks, but nobody has used them on a device yet:
 - A custom reminder comes only once. There is no repeating reminder (for example, each week for a goal).
 - Swipe actions have no screen reader support. The details screen still has edit and delete.
 - A backup has only the counters. It does not have the settings or the widget choices.
-- The README screenshots show the old accent colors (before 1.4.0). Do not change them without the owner's approval.
+- The README screenshots come from the emulator with demo data (after 1.4.0). `widgets.jpg` is still from 1.3.0.
+  Ask the owner before you change the screenshots.
+  How they were made: `npx expo run:android --variant release` (no dev warnings on the screen).
+  Demo counters go into `counters:v1` in `databases/RKStorage` with `sqlite3` through `run-as`. `run-as` needs the
+  debug APK, so install the debug APK, write the data, then install the release APK again (same key, the data stays).
+  Crop 136 px at the top and 63 px at the bottom (system bars), then scale to 780 px wide.
 
 ## Ideas for next time
 

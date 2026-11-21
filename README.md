@@ -12,14 +12,20 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
     <td><img src="docs/screenshots/home.png" width="200" alt="Home screen with the year card and counters" /></td>
     <td><img src="docs/screenshots/swipe.png" width="200" alt="Swipe actions: delete on the right, edit on the left" /></td>
     <td><img src="docs/screenshots/details.png" width="200" alt="Counter details" /></td>
-    <td><img src="docs/screenshots/new-counter.png" width="200" alt="New counter form" /></td>
-    <td><img src="docs/screenshots/settings.png" width="200" alt="Settings" /></td>
   </tr>
   <tr>
     <td align="center">Year card and counters</td>
     <td align="center">Swipe to edit or delete</td>
     <td align="center">Counter details</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/new-counter.png" width="200" alt="New counter form: the card with the name and the icon, the colors, and one panel for the date, the repeat and the reminder" /></td>
+    <td><img src="docs/screenshots/calendar.png" width="200" alt="A list of events from the phone calendar" /></td>
+    <td><img src="docs/screenshots/settings.png" width="200" alt="Settings" /></td>
+  </tr>
+  <tr>
     <td align="center">New counter</td>
+    <td align="center">Choose an event from the calendar</td>
     <td align="center">Settings</td>
   </tr>
 </table>
@@ -35,14 +41,17 @@ It runs on Android and iOS. Built with React Native, Expo and Expo Router.
 - **Reminders** (Android) — for a countdown: on the day, 1 day before or 1 week before. For all counters: on a date that you choose. Each counter has its own reminder time. Tap the notification to open the counter.
 - Counters in groups: upcoming (nearest first), since, goals and past.
 - Details: weeks and days left, weekends left, days passed of the total.
-- Create and edit counters with a live preview, quick dates, emoji and 12 card colors.
+- Create and edit counters on the card itself: type the name in the card, tap the icon to change it,
+  and choose one of 12 card colors under the card. The date, the repeat and the reminder are in one panel, with quick dates.
+- **From the calendar** — choose an event from the phone calendar, and Chas makes a countdown with its name and date.
+  Yearly and monthly events, for example birthdays, become repeating countdowns. Chas only reads the calendar. It never changes it.
 - Swipe a counter on the home screen: to the right to edit it, to the left to delete it.
 - Android home screen widgets: the year, and one counter of your choice. Add them from Settings or from the home screen.
   Make a widget wide, and the text moves beside the ring or the number.
 - Native date and time pickers on Android and iOS.
 - Light, dark and system themes, and six accent colors.
 - English, Ukrainian and French. The app follows the phone language, or you can choose one in Settings.
-- All data stays on the device (AsyncStorage).
+- All data stays on the device (AsyncStorage). The calendar events stay on the device too.
 
 ## Install
 
@@ -58,7 +67,7 @@ npm run android    # open in an Android emulator or a connected device
 npm run ios        # open in the iOS simulator (macOS only)
 ```
 
-Widgets do not work in Expo Go. To test them, build the APK (see below).
+Widgets and the calendar do not work in Expo Go. To test them, make a development build (`npx expo run:android`) or build the APK (see below).
 
 ## Checks
 
@@ -109,11 +118,11 @@ src/
 │   ├── index.tsx   # Year countdown and counter groups
 │   ├── edit.tsx    # Create or edit a counter
 │   ├── [id].tsx    # Counter details
-│   └── settings.tsx# Language, theme, accent color, widgets, support
+│   └── settings.tsx# Appearance (theme, accent color, language), widgets, backup, support
 ├── components/     # UI parts
 ├── models/         # TypeScript types
 ├── i18n/           # Translations (en, uk, fr)
-├── services/       # Storage (AsyncStorage) and reminders (notifications)
+├── services/       # Storage (AsyncStorage), reminders (notifications), backup and calendar
 ├── theme/          # Colors
 ├── utils/          # Day, year, percent and reminder calculations
 ├── widgets/        # Android widgets and their configuration screen
@@ -124,7 +133,8 @@ index.ts            # Entry: Expo Router and widget registration
 
 ## About the screenshots
 
-The screenshots come from an Android phone with version 1.3.0.
+The screenshots come from the Android emulator with demo data, with the changes after version 1.4.0.
+The widget picture comes from an Android phone with version 1.3.0.
 The web build has no reminders and no widgets. It uses the browser date and time inputs.
 
 ## Roadmap
