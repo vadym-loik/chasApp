@@ -116,6 +116,7 @@ const en = {
   deleteMessage: (title: string) => `“${title}” will be deleted forever.`,
 
   settings: 'Settings',
+  appearance: 'Appearance',
   version: (v: string) => `Version ${v}`,
   theme: 'Theme',
   themeModes: { system: 'System', light: 'Light', dark: 'Dark' },
@@ -228,6 +229,7 @@ const uk: Strings = {
   deleteMessage: (title) => `«${title}» буде видалено назавжди.`,
 
   settings: 'Налаштування',
+  appearance: 'Вигляд',
   version: (v) => `Версія ${v}`,
   theme: 'Тема',
   themeModes: { system: 'Системна', light: 'Світла', dark: 'Темна' },
@@ -341,6 +343,7 @@ const fr: Strings = {
   deleteMessage: (title) => `«\u00A0${title}\u00A0» sera supprimé définitivement.`,
 
   settings: 'Réglages',
+  appearance: 'Apparence',
   version: (v) => `Version ${v}`,
   theme: 'Thème',
   themeModes: { system: 'Système', light: 'Clair', dark: 'Sombre' },

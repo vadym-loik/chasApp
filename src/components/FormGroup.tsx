@@ -1,5 +1,5 @@
 import { Children, Fragment, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../AppProvider';
 import { Icon, type IconName } from './Icon';
 
@@ -41,6 +41,22 @@ export function FormRow({ icon, label, action, children }: RowProps) {
       </View>
       {children}
     </View>
+  );
+}
+
+/** A row of a form group that runs an action when the user taps it. */
+export function ActionRow({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  const { colors } = useApp();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.row, styles.header, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Icon name={icon} size={20} color={colors.accent} />
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      <Icon name="chevron" size={20} color={colors.muted} />
+    </Pressable>
   );
 }
 
